@@ -1,6 +1,10 @@
 import { Suspense } from "react";
 import { RoleManagement } from "@/components/role-management";
 import { listAllQuests, listManagedUsers, listServerRoles } from "@/lib/db";
+import {
+  getDiscordNotificationSettings,
+  toSettingsView,
+} from "@/lib/notification-settings";
 import { requireAdmin } from "@/lib/session";
 
 function RolesFallback() {
@@ -14,11 +18,14 @@ function RolesFallback() {
 
 async function RolesContent() {
   const session = await requireAdmin();
-  const [roles, users, quests] = await Promise.all([
+  const [roles, users, quests, rawNotificationSettings] = await Promise.all([
     listServerRoles(),
     listManagedUsers(),
     listAllQuests(),
+    getDiscordNotificationSettings(),
   ]);
+
+  const notificationSettings = toSettingsView(rawNotificationSettings);
 
   return (
     <RoleManagement
@@ -26,6 +33,11 @@ async function RolesContent() {
       users={users}
       quests={quests}
       currentUserId={session.user.id}
+      discordWebhookConfigured={
+        notificationSettings.hasCustomWebhook ||
+        notificationSettings.envWebhookConfigured
+      }
+      notificationSettings={notificationSettings}
     />
   );
 }

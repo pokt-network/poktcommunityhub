@@ -1,18 +1,21 @@
 "use client";
 
-import { useActionState, useMemo, useState, useTransition } from "react";
+import { useActionState, useMemo, useRef, useState, useTransition } from "react";
 import {
   LuAward,
+  LuBell,
   LuCheck,
   LuChevronDown,
   LuChevronLeft,
   LuChevronRight,
   LuFilter,
+  LuImage,
   LuPencil,
   LuPlus,
   LuRefreshCw,
   LuSearch,
   LuTrash2,
+  LuUpload,
   LuUsers,
   LuX,
 } from "react-icons/lu";
@@ -27,10 +30,27 @@ import {
   provisionDiscordRolesAction,
   type RoleActionState,
 } from "@/app/actions/roles";
+import {
+  saveDiscordNotificationSettingsAction,
+  testDiscordWebhookAction,
+  uploadDiscordWebhookAvatarAction,
+} from "@/app/actions/notification-settings";
+import type {
+  DiscordNotificationSettingsView,
+  QuestPingMode,
+} from "@/lib/notification-settings";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { ServerRoleBadge } from "@/components/server-role-badge";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -65,15 +85,34 @@ type RoleManagementProps = {
   users: ManagedUser[];
   quests?: Pick<Quest, "id" | "title" | "xp_reward" | "status">[];
   currentUserId: string;
+  discordWebhookConfigured?: boolean;
+  notificationSettings?: DiscordNotificationSettingsView;
+};
+
+const DEFAULT_SETTINGS_VIEW: DiscordNotificationSettingsView = {
+  botName: "POKT Community Hub",
+  botAvatarUrl: null,
+  announceNewQuests: true,
+  announceRoleUnlocks: true,
+  announceQuestCompletions: false,
+  mentionMembers: true,
+  questPingMode: "none",
+  questPingRoleId: null,
+  hasCustomWebhook: false,
+  webhookPreview: null,
+  envWebhookConfigured: false,
 };
 
 export function RoleManagement({
   roles,
   users,
   quests = [],
+  discordWebhookConfigured = false,
+  notificationSettings = DEFAULT_SETTINGS_VIEW,
 }: RoleManagementProps) {
   const [tab, setTab] = useState<"studio" | "members">("studio");
   const [editingRole, setEditingRole] = useState<ServerRole | null>(null);
+  const [webhookSettingsOpen, setWebhookSettingsOpen] = useState(false);
 
   // Studio form states
   const [name, setName] = useState("");
@@ -140,6 +179,172 @@ export function RoleManagement({
   function handleToggleRole(userId: string, roleId: string, hasRole: boolean) {
     startAssign(async () => {
       await toggleUserRoleAction(userId, roleId, hasRole);
+    });
+  }
+
+  // Notification settings modal state
+  const [savedSettings, setSavedSettings] =
+    useState<DiscordNotificationSettingsView>(notificationSettings);
+  const [webhookUrlInput, setWebhookUrlInput] = useState("");
+  const [clearCustomWebhook, setClearCustomWebhook] = useState(false);
+  const [botNameInput, setBotNameInput] = useState(notificationSettings.botName);
+  const [botAvatarUrl, setBotAvatarUrl] = useState(
+    notificationSettings.botAvatarUrl,
+  );
+  const [clearAvatar, setClearAvatar] = useState(false);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+  const [announceNewQuests, setAnnounceNewQuests] = useState(
+    notificationSettings.announceNewQuests,
+  );
+  const [announceRoleUnlocks, setAnnounceRoleUnlocks] = useState(
+    notificationSettings.announceRoleUnlocks,
+  );
+  const [announceQuestCompletions, setAnnounceQuestCompletions] = useState(
+    notificationSettings.announceQuestCompletions,
+  );
+  const [mentionMembers, setMentionMembers] = useState(
+    notificationSettings.mentionMembers,
+  );
+  const [questPingMode, setQuestPingMode] = useState<QuestPingMode>(
+    notificationSettings.questPingMode,
+  );
+  const [questPingRoleId, setQuestPingRoleId] = useState(
+    notificationSettings.questPingRoleId || "",
+  );
+  const [modalNotice, setModalNotice] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const [testWebhookPending, startTestWebhook] = useTransition();
+  const [saveWebhookPending, startSaveWebhook] = useTransition();
+  const [avatarUploadPending, startAvatarUpload] = useTransition();
+
+  const isWebhookReady =
+    Boolean(webhookUrlInput.trim()) ||
+    (!clearCustomWebhook && savedSettings.hasCustomWebhook) ||
+    savedSettings.envWebhookConfigured ||
+    discordWebhookConfigured;
+
+  const avatarPreview =
+    !clearAvatar && botAvatarUrl ? botAvatarUrl : null;
+
+  function openWebhookSettingsModal() {
+    setModalNotice(null);
+    setWebhookUrlInput("");
+    setClearCustomWebhook(false);
+    setBotNameInput(savedSettings.botName);
+    setBotAvatarUrl(savedSettings.botAvatarUrl);
+    setClearAvatar(false);
+    setAnnounceNewQuests(savedSettings.announceNewQuests);
+    setAnnounceRoleUnlocks(savedSettings.announceRoleUnlocks);
+    setAnnounceQuestCompletions(savedSettings.announceQuestCompletions);
+    setMentionMembers(savedSettings.mentionMembers);
+    setQuestPingMode(savedSettings.questPingMode);
+    setQuestPingRoleId(savedSettings.questPingRoleId || "");
+    setWebhookSettingsOpen(true);
+  }
+
+  function handleAvatarFileChange(file: File | null) {
+    if (!file) return;
+    setModalNotice(null);
+    startAvatarUpload(async () => {
+      try {
+        const fd = new FormData();
+        fd.set("avatar", file);
+        const res = await uploadDiscordWebhookAvatarAction(fd);
+        if (res.ok && res.url) {
+          setBotAvatarUrl(res.url);
+          setClearAvatar(false);
+          setModalNotice({
+            type: "success",
+            text: "Avatar uploaded — Save settings to apply it to announcements.",
+          });
+        } else {
+          setModalNotice({
+            type: "error",
+            text: res.error || "Failed to upload avatar.",
+          });
+        }
+      } catch {
+        setModalNotice({
+          type: "error",
+          text: "Network error uploading avatar.",
+        });
+      } finally {
+        if (avatarFileRef.current) avatarFileRef.current.value = "";
+      }
+    });
+  }
+
+  function handleTestDiscordWebhook() {
+    setModalNotice(null);
+    startTestWebhook(async () => {
+      try {
+        const res = await testDiscordWebhookAction({
+          webhookUrl: webhookUrlInput.trim() || undefined,
+          botAvatarUrl: clearAvatar ? null : botAvatarUrl,
+          clearAvatar,
+        });
+        if (res.ok) {
+          setModalNotice({
+            type: "success",
+            text: res.message || "Test message sent to Discord!",
+          });
+        } else {
+          setModalNotice({
+            type: "error",
+            text: res.error || "Failed to deliver test message to Discord.",
+          });
+        }
+      } catch {
+        setModalNotice({
+          type: "error",
+          text: "Network error sending test webhook.",
+        });
+      }
+    });
+  }
+
+  function handleSaveNotificationSettings() {
+    setModalNotice(null);
+    startSaveWebhook(async () => {
+      try {
+        const res = await saveDiscordNotificationSettingsAction({
+          webhookUrl: webhookUrlInput.trim() || undefined,
+          clearWebhook: clearCustomWebhook,
+          botName: botNameInput.trim() || "POKT Community Hub",
+          botAvatarUrl: clearAvatar ? undefined : botAvatarUrl || undefined,
+          clearAvatar,
+          announceNewQuests,
+          announceRoleUnlocks,
+          announceQuestCompletions,
+          mentionMembers,
+          questPingMode,
+          questPingRoleId: questPingMode === "role" ? questPingRoleId.trim() : undefined,
+        });
+        if (res.ok && res.settings) {
+          setSavedSettings(res.settings);
+          setWebhookUrlInput("");
+          setClearCustomWebhook(false);
+          setBotAvatarUrl(res.settings.botAvatarUrl);
+          setClearAvatar(false);
+          setModalNotice({
+            type: "success",
+            text: "Notification settings saved.",
+          });
+        } else {
+          setModalNotice({
+            type: "error",
+            text: res.error || "Failed to save notification settings.",
+          });
+        }
+      } catch {
+        setModalNotice({
+          type: "error",
+          text: "Network error saving notification settings.",
+        });
+      }
     });
   }
 
@@ -335,8 +540,401 @@ export function RoleManagement({
               </span>
             </Button>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={openWebhookSettingsModal}
+            className="ml-auto h-8 w-8 shrink-0 rounded-full border-white/15 bg-white/[0.04] p-0 text-[#8eb6ff] transition hover:bg-white/10 hover:border-white/25 hover:text-white"
+            title="Discord announcement & webhook settings"
+            aria-label="Discord announcement & webhook settings"
+          >
+            <LuBell className="h-3.5 w-3.5" aria-hidden />
+          </Button>
         </div>
       </header>
+
+      <Dialog
+        open={webhookSettingsOpen}
+        onOpenChange={(open) => {
+          if (testWebhookPending || saveWebhookPending || avatarUploadPending) return;
+          setWebhookSettingsOpen(open);
+        }}
+      >
+        <DialogContent className="flex max-h-[min(90vh,720px)] max-w-lg flex-col gap-0 overflow-hidden p-0 sm:p-0">
+          <DialogHeader className="shrink-0 border-b border-white/8 px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
+            <div className="flex items-center gap-2.5 pr-8">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/15 text-[#8eb6ff]">
+                <LuBell className="h-4 w-4" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <DialogTitle>Discord Announcements</DialogTitle>
+                <DialogDescription>
+                  Configure the announcements channel webhook and choose which events to broadcast.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="scrollbar-none min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
+            {/* Webhook Channel Connection */}
+            <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold tracking-wider text-[#8eb6ff] uppercase">
+                  Announcements Channel Webhook
+                </p>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase",
+                    isWebhookReady
+                      ? "border border-success/40 bg-success/15 text-success"
+                      : "border border-warning/40 bg-warning/15 text-warning",
+                  )}
+                >
+                  {isWebhookReady ? "Connected" : "Not set"}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+                {!clearCustomWebhook && savedSettings.hasCustomWebhook ? (
+                  <>
+                    <span>
+                      Active webhook:{" "}
+                      <code className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] text-white">
+                        {savedSettings.webhookPreview}
+                      </code>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setClearCustomWebhook(true)}
+                      className="text-[11px] font-medium text-warning hover:underline"
+                    >
+                      Clear saved URL
+                    </button>
+                  </>
+                ) : savedSettings.envWebhookConfigured ? (
+                  <span>Using default webhook from environment (DISCORD_WEBHOOK_URL).</span>
+                ) : (
+                  <span>Paste your Discord channel webhook URL below to enable broadcasts.</span>
+                )}
+              </div>
+
+              <details className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                <summary className="cursor-pointer select-none text-xs font-medium text-[#8eb6ff] outline-none marker:text-[#8eb6ff]">
+                  How to get a channel webhook URL
+                </summary>
+                <ol className="mt-2 list-decimal space-y-1.5 pl-4 text-[11px] leading-relaxed text-muted">
+                  <li>Open Discord → the channel that should receive announcements.</li>
+                  <li>
+                    Click the gear next to the channel name (or right-click →{" "}
+                    <span className="text-slate-300">Edit Channel</span>).
+                  </li>
+                  <li>
+                    Go to <span className="text-slate-300">Integrations → Webhooks</span> →{" "}
+                    <span className="text-slate-300">New Webhook</span> (or Create Webhook).
+                  </li>
+                  <li>Name it (e.g. POKT Hub), confirm the channel, then Copy Webhook URL.</li>
+                  <li>Paste the URL below and click Save settings.</li>
+                </ol>
+              </details>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="webhook-url-input"
+                  className="block text-xs font-medium text-slate-300"
+                >
+                  {!clearCustomWebhook && savedSettings.hasCustomWebhook
+                    ? "Replace Webhook URL (leave blank to keep current)"
+                    : "Discord Webhook URL"}
+                </label>
+                <Input
+                  id="webhook-url-input"
+                  type="url"
+                  value={webhookUrlInput}
+                  onChange={(e) => {
+                    setWebhookUrlInput(e.target.value);
+                    if (e.target.value.trim()) setClearCustomWebhook(false);
+                  }}
+                  placeholder="https://discord.com/api/webhooks/..."
+                  className={cn(glassControl, "h-9 text-xs font-mono")}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="webhook-bot-name"
+                  className="block text-xs font-medium text-slate-300"
+                >
+                  Webhook Display Name
+                </label>
+                <Input
+                  id="webhook-bot-name"
+                  type="text"
+                  value={botNameInput}
+                  onChange={(e) => setBotNameInput(e.target.value)}
+                  placeholder="POKT Community Hub"
+                  maxLength={80}
+                  className={cn(glassControl, "h-9 text-xs")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-slate-300">Webhook Avatar</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06]">
+                    {avatarPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatarPreview}
+                        alt="Webhook avatar preview"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <LuImage className="h-5 w-5 text-muted" aria-hidden />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <input
+                      ref={avatarFileRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="sr-only"
+                      onChange={(e) =>
+                        handleAvatarFileChange(e.target.files?.[0] ?? null)
+                      }
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={avatarUploadPending || saveWebhookPending}
+                        onClick={() => avatarFileRef.current?.click()}
+                        className="h-8 rounded-full border-white/15 bg-white/[0.04] text-xs text-white hover:bg-white/10"
+                        aria-busy={avatarUploadPending}
+                      >
+                        <LuUpload className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                        {avatarUploadPending ? "Uploading…" : "Upload image"}
+                      </Button>
+                      {avatarPreview || savedSettings.botAvatarUrl ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={avatarUploadPending || saveWebhookPending}
+                          onClick={() => {
+                            setClearAvatar(true);
+                            setBotAvatarUrl(null);
+                          }}
+                          className="h-8 rounded-full border-white/15 bg-white/[0.04] text-xs text-warning hover:bg-white/10"
+                        >
+                          Remove
+                        </Button>
+                      ) : null}
+                    </div>
+                    <p className="text-[11px] text-muted">
+                      PNG / JPEG / WebP · max 2MB. Shown on Discord posts after Save.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* What to Announce */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-2.5">
+              <p className="text-xs font-semibold tracking-wider text-[#8eb6ff] uppercase">
+                What to Announce
+              </p>
+
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-3 cursor-pointer hover:bg-white/[0.05] transition">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-white">New Quests</p>
+                  <p className="text-[11px] text-muted mt-0.5">
+                    Post an embed with XP reward, category, role reward, and deadline when a quest is published.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={announceNewQuests}
+                  onChange={(e) => setAnnounceNewQuests(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-black/40 accent-[#5865F2] cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-3 cursor-pointer hover:bg-white/[0.05] transition">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-white">
+                    Ambassador Rank-Ups &amp; Role Unlocks
+                  </p>
+                  <p className="text-[11px] text-muted mt-0.5">
+                    Celebrate when an ambassador unlocks a new server role or crosses an XP milestone.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={announceRoleUnlocks}
+                  onChange={(e) => setAnnounceRoleUnlocks(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-black/40 accent-[#5865F2] cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-3 cursor-pointer hover:bg-white/[0.05] transition">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-white">Quest Completions</p>
+                  <p className="text-[11px] text-muted mt-0.5">
+                    Post to the channel whenever a member&apos;s quest submission is approved.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={announceQuestCompletions}
+                  onChange={(e) => setAnnounceQuestCompletions(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-black/40 accent-[#5865F2] cursor-pointer"
+                />
+              </label>
+            </div>
+
+            {/* Mentions & Pings */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+              <p className="text-xs font-semibold tracking-wider text-[#8eb6ff] uppercase">
+                Mentions &amp; Pings
+              </p>
+
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.02] p-3 cursor-pointer hover:bg-white/[0.05] transition">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-white">
+                    Ping Ambassador (@user) on Rank-Ups
+                  </p>
+                  <p className="text-[11px] text-muted mt-0.5">
+                    Mentions the member&apos;s linked Discord account so they get a notification.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={mentionMembers}
+                  onChange={(e) => setMentionMembers(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-black/40 accent-[#5865F2] cursor-pointer"
+                />
+              </label>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-slate-300">
+                    New Quest Ping
+                  </label>
+                  <Select
+                    value={questPingMode}
+                    onValueChange={(v) => setQuestPingMode(v as QuestPingMode)}
+                  >
+                    <SelectTrigger className={cn(glassControl, "h-9 text-xs")}>
+                      <SelectValue placeholder="No ping" />
+                    </SelectTrigger>
+                    <SelectContent className="border-white/15 bg-[#0a0f1a] text-white">
+                      <SelectItem value="none">No ping</SelectItem>
+                      <SelectItem value="here">@here (online members)</SelectItem>
+                      <SelectItem value="everyone">@everyone</SelectItem>
+                      <SelectItem value="role">Specific Discord role (@role)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {questPingMode === "role" ? (
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="quest-ping-role-id"
+                      className="block text-xs font-medium text-slate-300"
+                    >
+                      Discord Role ID to Ping
+                    </label>
+                    <Input
+                      id="quest-ping-role-id"
+                      type="text"
+                      value={questPingRoleId}
+                      onChange={(e) => setQuestPingRoleId(e.target.value)}
+                      placeholder="e.g. 123456789012345678"
+                      className={cn(glassControl, "h-9 text-xs font-mono")}
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              {questPingMode === "role" &&
+              roles.some((r) => Boolean(r.discord_role_id)) ? (
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <span className="text-[11px] text-muted">Quick pick:</span>
+                  {roles
+                    .filter((r) => Boolean(r.discord_role_id))
+                    .map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setQuestPingRoleId(r.discord_role_id || "")}
+                        className={cn(
+                          "rounded-full border px-2 py-0.5 text-[11px] font-medium transition",
+                          questPingRoleId === r.discord_role_id
+                            ? "border-primary bg-primary/20 text-white"
+                            : "border-white/15 bg-white/[0.04] text-muted hover:text-white",
+                        )}
+                      >
+                        @{r.name}
+                      </button>
+                    ))}
+                </div>
+              ) : null}
+            </div>
+
+            {modalNotice ? (
+              <p
+                className={cn(
+                  "rounded-xl border px-3 py-2 text-xs font-medium",
+                  modalNotice.type === "success"
+                    ? "border-success/30 bg-success/10 text-success"
+                    : "border-warning/30 bg-warning/10 text-warning",
+                )}
+              >
+                {modalNotice.text}
+              </p>
+            ) : null}
+          </div>
+
+          <DialogFooter className="shrink-0 gap-2 border-t border-white/8 px-5 py-4 sm:px-6">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={testWebhookPending || saveWebhookPending || avatarUploadPending}
+              onClick={() => setWebhookSettingsOpen(false)}
+              className="rounded-full border-white/15 bg-white/[0.04] text-white hover:bg-white/10"
+            >
+              Close
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                testWebhookPending ||
+                saveWebhookPending ||
+                avatarUploadPending ||
+                !isWebhookReady
+              }
+              onClick={handleTestDiscordWebhook}
+              className="rounded-full border-[#5865F2]/40 bg-[#5865F2]/15 text-white hover:bg-[#5865F2]/30"
+              aria-busy={testWebhookPending}
+            >
+              {testWebhookPending ? "Sending…" : "Send test"}
+            </Button>
+            <Button
+              type="button"
+              disabled={saveWebhookPending || testWebhookPending || avatarUploadPending}
+              onClick={handleSaveNotificationSettings}
+              className="rounded-full"
+              aria-busy={saveWebhookPending}
+            >
+              {saveWebhookPending ? "Saving…" : "Save settings"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {syncMessage ? (
         <div className="flex items-center justify-between gap-2 rounded-2xl border border-success/30 bg-success/10 px-4 py-2.5 text-xs font-medium text-success">

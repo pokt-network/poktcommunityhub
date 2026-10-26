@@ -31,8 +31,8 @@ export function ZoomableImage({
   const lastTapRef = useRef(0);
 
   useEffect(() => {
-    setIsMounted(true);
     const checkMobile = () => {
+      setIsMounted(true);
       setIsMobileOrTouch(
         window.matchMedia("(pointer: coarse)").matches ||
         window.innerWidth < 1024 ||
@@ -40,9 +40,12 @@ export function ZoomableImage({
         "ontouchstart" in window,
       );
     };
-    checkMobile();
+    const id = window.requestAnimationFrame(checkMobile);
     window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    return () => {
+      window.cancelAnimationFrame(id);
+      window.removeEventListener("resize", checkMobile);
+    };
   }, []);
 
   const resetZoom = useCallback(() => {
@@ -55,10 +58,10 @@ export function ZoomableImage({
     setIsOpen(true);
   };
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsOpen(false);
     resetZoom();
-  };
+  }, [resetZoom]);
 
   // Lock background scroll and listen for Escape key when modal is open
   useEffect(() => {
@@ -77,7 +80,7 @@ export function ZoomableImage({
       document.body.style.overflow = origOverflow;
       document.body.style.touchAction = origTouchAction;
     };
-  }, [isOpen]);
+  }, [isOpen, closeModal]);
 
   // Touch handlers inside the modal ONLY
   const handleTouchStart = (e: React.TouchEvent) => {

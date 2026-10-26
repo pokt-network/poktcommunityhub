@@ -120,3 +120,36 @@ export async function deleteProofFile(path: string) {
     console.warn(`[deleteProofFile] Could not delete ${path}:`, error.message);
   }
 }
+
+const WEBHOOK_AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+
+/** Upload a public webhook avatar image; returns the public HTTPS URL. */
+export async function uploadWebhookAvatarFile(file: File): Promise<string> {
+  if (!ALLOWED_TYPES.has(file.type)) {
+    throw new Error("Avatar must be PNG, JPEG, or WebP.");
+  }
+  if (file.size > WEBHOOK_AVATAR_MAX_BYTES) {
+    throw new Error("Avatar must be 2MB or smaller.");
+  }
+
+  const ext =
+    file.type === "image/png"
+      ? "png"
+      : file.type === "image/webp"
+        ? "webp"
+        : "jpg";
+  const path = `webhook-avatar/${crypto.randomUUID()}.${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const supabase = createSupabaseServiceClient();
+
+  const { error } = await supabase.storage.from(PROOFS_BUCKET).upload(path, buffer, {
+    contentType: file.type,
+    upsert: false,
+  });
+
+  if (error) {
+    throw new Error(error.message || "Failed to upload avatar.");
+  }
+
+  return getProofPublicUrl(path);
+}

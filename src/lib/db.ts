@@ -713,6 +713,18 @@ export async function updateQuestCategory(id: string, name: string) {
   return rows[0] ?? null;
 }
 
+export async function getQuestCategoryById(
+  id: string,
+): Promise<QuestCategory | null> {
+  const { rows } = await query<QuestCategory>(
+    `SELECT id, name, position, "createdAt", "updatedAt"
+     FROM public.quest_categories
+     WHERE id = $1`,
+    [id],
+  );
+  return rows[0] ?? null;
+}
+
 export async function deleteQuestCategory(id: string) {
   const { rows } = await query<{ id: string }>(
     `DELETE FROM public.quest_categories WHERE id = $1 RETURNING id`,
@@ -1379,6 +1391,39 @@ export async function getServerRoleById(roleId: string): Promise<ServerRole | nu
      WHERE r.id = $1
      GROUP BY r.id, r.name, r.description, r.xp_required, r.color, r.icon, r.position, r.discord_role_id, r."createdAt", r."updatedAt"`,
     [roleId],
+  );
+  return rows[0] ?? null;
+}
+
+export async function getUserById(userId: string): Promise<{
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: string;
+  totalXp: number;
+  discordId: string | null;
+} | null> {
+  const { rows } = await query<{
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+    role: string;
+    totalXp: number;
+    discordId: string | null;
+  }>(
+    `SELECT
+       id,
+       name,
+       email,
+       image,
+       role,
+       COALESCE("totalXp", 0)::int AS "totalXp",
+       "discordId" AS "discordId"
+     FROM public."user"
+     WHERE id = $1`,
+    [userId],
   );
   return rows[0] ?? null;
 }

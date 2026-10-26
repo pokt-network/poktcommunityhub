@@ -15,6 +15,7 @@
     "db:migrate-revoke-grants": "node scripts/apply-revoke-grants.mjs",
     "db:migrate-schedule": "node scripts/apply-quest-schedule.mjs",
     "db:migrate-discord-roles": "node scripts/apply-discord-roles.mjs",
+    "db:migrate-app-settings": "node scripts/apply-app-settings.mjs",
     "db:seed-demo": "node scripts/seed-demo.mjs"
   },
   "dependencies": {

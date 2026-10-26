@@ -163,7 +163,7 @@ export function QuestDetailPanel({
         }
       : quest;
 
-  const state = questScheduleState(effectiveQuest, Date.now());
+  const state = questScheduleState(effectiveQuest);
   const isUpcoming = state === "upcoming";
   const isEnded = state === "ended";
   const showEndedBanner =

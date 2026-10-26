@@ -11,8 +11,6 @@ import {
   LuMegaphone,
   LuNewspaper,
   LuShare2,
-  LuSparkles,
-  LuSwords,
   LuTerminal,
   LuTrophy,
   LuUsers,

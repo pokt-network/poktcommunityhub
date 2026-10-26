@@ -1,13 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import {
   createQuest,
   deleteQuest,
   setQuestStatus,
   updateQuest,
+  getQuestCategoryById,
+  getServerRoleById,
 } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { notifyNewQuest } from "@/lib/discord-webhook";
 
 export type QuestActionState = {
   ok: boolean;
@@ -93,7 +97,11 @@ export async function createQuestAction(
       return { ok: false, error: schedule.error };
     }
 
-    await createQuest({
+    const broadcastDiscord =
+      formData.get("broadcastDiscord") === "on" ||
+      formData.get("broadcastDiscord") === "true";
+
+    const createdQuest = await createQuest({
       title,
       description,
       xpReward,
@@ -105,6 +113,29 @@ export async function createQuestAction(
       startsAt: schedule.startsAt,
       endsAt: schedule.endsAt,
     });
+
+    if (createdQuest && broadcastDiscord) {
+      after(async () => {
+        try {
+          const [category, role] = await Promise.all([
+            categoryId ? getQuestCategoryById(categoryId) : Promise.resolve(null),
+            rewardRoleId ? getServerRoleById(rewardRoleId) : Promise.resolve(null),
+          ]);
+          await notifyNewQuest({
+            id: createdQuest.id,
+            title: createdQuest.title,
+            description: createdQuest.description,
+            xp_reward: createdQuest.xp_reward,
+            category_name: category?.name ?? null,
+            reward_role_name: role?.name ?? null,
+            reward_role_color: role?.color ?? null,
+            ends_at: createdQuest.ends_at,
+          });
+        } catch (webhookErr) {
+          console.warn("[createQuestAction] Discord webhook broadcast error:", webhookErr);
+        }
+      });
+    }
 
     revalidatePath("/admin/quests");
     revalidatePath("/quests");

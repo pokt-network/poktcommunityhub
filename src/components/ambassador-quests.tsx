@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { createElement, useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import {
   LuArrowRight,
   LuBolt,
@@ -26,14 +26,14 @@ import { QuestScheduleChip } from "@/components/quest-schedule-chip";
 import { ServerRoleBadge } from "@/components/server-role-badge";
 import { XpBadge } from "@/components/xp-badge";
 import type { QuestCategory } from "@/lib/db";
-import { questIconFor, questIconVisual } from "@/lib/quest-icons";
+import { questIconVisual } from "@/lib/quest-icons";
 import {
   questCategoryLabel,
   xpLevelProgress,
   type FilterableQuest,
   type QuestListItem,
 } from "@/lib/quest-filters";
-import { toMs } from "@/lib/quest-schedule";
+import { isFutureSchedule } from "@/lib/quest-schedule";
 import { cn } from "@/lib/utils";
 
 type AmbassadorQuestsProps = {
@@ -481,8 +481,7 @@ function QuestBoardCard({
   const tag = questCategoryLabel(quest);
   const progress = progressFor(quest.submission_status);
   const pct = (progress.done / progress.total) * 100;
-  const startMs = toMs(quest.starts_at);
-  const isUpcoming = startMs !== null && startMs > Date.now();
+  const isUpcoming = isFutureSchedule(quest.starts_at);
   const { Icon: QuestIcon, containerClass: iconContainerClass } =
     questIconVisual(quest);
 

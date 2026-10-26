@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import {
   updateSubmissionReview,
   revertSubmissionToPending,
@@ -8,10 +9,13 @@ import {
   syncUserXpRoles,
   getQuestById,
   assignRoleToUser,
+  getUserAssignedServerRoles,
+  getUserById,
 } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { deleteProofFilesForSubmission } from "@/lib/supabase-server";
 import { syncUserRolesToDiscord } from "@/lib/discord-sync";
+import { notifyQuestCompleted, notifyRoleUnlocked } from "@/lib/discord-webhook";
 
 export type ReviewActionState = {
   ok: boolean;
@@ -61,6 +65,10 @@ export async function approveSubmissionAction(
       console.error("Failed to delete approved proof files:", cleanupErr);
     }
 
+    // Capture user roles before any new assignments/XP sync to detect unlocked roles
+    const rolesBefore = await getUserAssignedServerRoles(updated.user_id);
+    const existingRoleIds = new Set(rolesBefore.map((r) => r.id));
+
     // If this quest awards a specific server role, grant it to the user
     const quest = await getQuestById(updated.quest_id);
     if (quest?.reward_role_id) {
@@ -77,6 +85,50 @@ export async function approveSubmissionAction(
     // Sync roles to Discord via Bot API
     syncUserRolesToDiscord(updated.user_id).catch((syncErr) => {
       console.warn("[approveSubmissionAction] Discord role sync:", syncErr);
+    });
+
+    // Announce quest completion + any newly unlocked roles via Discord webhook
+    // (each announcement type is gated by the admin notification settings)
+    after(async () => {
+      try {
+        const [rolesAfter, user] = await Promise.all([
+          getUserAssignedServerRoles(updated.user_id),
+          getUserById(updated.user_id),
+        ]);
+        if (!user) return;
+
+        if (quest) {
+          await notifyQuestCompleted({
+            user: {
+              id: user.id,
+              name: user.name,
+              discordId: user.discordId,
+              totalXp: user.totalXp,
+            },
+            quest: { id: quest.id, title: quest.title, xp_reward: quest.xp_reward },
+          });
+        }
+
+        const newlyEarnedRoles = rolesAfter.filter((r) => !existingRoleIds.has(r.id));
+        for (const role of newlyEarnedRoles) {
+          await notifyRoleUnlocked({
+            user: {
+              id: user.id,
+              name: user.name,
+              discordId: user.discordId,
+              totalXp: user.totalXp,
+            },
+            role: {
+              id: role.id,
+              name: role.name,
+              color: role.color,
+              xp_required: role.xp_required,
+            },
+          });
+        }
+      } catch (notifyErr) {
+        console.warn("[approveSubmissionAction] Discord webhook announcement error:", notifyErr);
+      }
     });
 
     revalidatePath("/admin");

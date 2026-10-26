@@ -30,9 +30,17 @@ export function toIsoOrNull(value: DateLike): string | null {
   return ms === null ? null : new Date(ms).toISOString();
 }
 
+export function isFutureSchedule(
+  value: DateLike,
+  now: number = Date.now(),
+): boolean {
+  const ms = toMs(value);
+  return ms !== null && ms > now;
+}
+
 export function questScheduleState(
   quest: QuestScheduleFields,
-  now: number,
+  now: number = Date.now(),
 ): QuestScheduleState {
   if (quest.status === "closed") return "closed";
   const start = toMs(quest.starts_at);

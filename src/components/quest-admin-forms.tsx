@@ -10,6 +10,7 @@ import {
   type ComponentProps,
 } from "react";
 import { useRouter } from "next/navigation";
+import { FaDiscord } from "react-icons/fa6";
 import type { DateRange } from "react-day-picker";
 import {
   LuAward,
@@ -272,11 +273,7 @@ function UnsavedChangesDialog({
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!open) {
-      setVisible(false);
-      return;
-    }
-    const id = window.requestAnimationFrame(() => setVisible(true));
+    const id = window.requestAnimationFrame(() => setVisible(open));
     return () => window.cancelAnimationFrame(id);
   }, [open]);
 
@@ -587,6 +584,23 @@ export function CreateQuestForm({
         </div>
       </div>
 
+      <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5">
+        <input
+          type="checkbox"
+          id="create-broadcast-discord"
+          name="broadcastDiscord"
+          defaultChecked
+          className="h-4 w-4 rounded border-white/20 bg-black/40 text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer accent-[#5865F2]"
+        />
+        <label
+          htmlFor="create-broadcast-discord"
+          className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-200 select-none"
+        >
+          <FaDiscord className="h-4 w-4 text-[#5865F2] shrink-0" />
+          <span>Broadcast quest to Discord announcements channel</span>
+        </label>
+      </div>
+
       {state.error ? (
           <p className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
             {state.error}
@@ -682,21 +696,36 @@ export function QuestBoardList({
   const modalOpen = modalMode !== "idle";
 
   useEffect(() => {
-    if (!modalOpen) {
-      setModalVisible(false);
-      return;
-    }
-    setDirty(false);
-    setUnsavedOpen(false);
-    setCloseAfterSave(false);
-    const id = window.requestAnimationFrame(() => setModalVisible(true));
+    const id = window.requestAnimationFrame(() => {
+      if (!modalOpen) {
+        setModalVisible(false);
+        return;
+      }
+      setDirty(false);
+      setUnsavedOpen(false);
+      setCloseAfterSave(false);
+      setModalVisible(true);
+    });
     return () => window.cancelAnimationFrame(id);
   }, [modalOpen, modalMode, selectedId]);
 
   useEffect(() => {
     if (!modalOpen) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") requestClose();
+      if (e.key === "Escape") {
+        if (dirty) {
+          setUnsavedOpen(true);
+        } else {
+          setUnsavedOpen(false);
+          setDirty(false);
+          setCloseAfterSave(false);
+          setModalVisible(false);
+          window.setTimeout(() => {
+            setModalMode("idle");
+            setSelectedId(null);
+          }, 200);
+        }
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

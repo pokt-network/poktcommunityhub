@@ -43,11 +43,7 @@ export function CategoryManagement({
   );
 
   useEffect(() => {
-    if (!open) {
-      setVisible(false);
-      return;
-    }
-    const id = window.requestAnimationFrame(() => setVisible(true));
+    const id = window.requestAnimationFrame(() => setVisible(open));
     return () => window.cancelAnimationFrame(id);
   }, [open]);
 

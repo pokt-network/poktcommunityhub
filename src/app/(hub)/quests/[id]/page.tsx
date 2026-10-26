@@ -57,7 +57,7 @@ async function QuestDetailContent({
     }
   }
 
-  const state = questScheduleState(quest, Date.now());
+  const state = questScheduleState(quest);
   const isUpcoming = state === "upcoming";
   const isEnded = state === "ended";
   const showEndedBanner = isEnded && submission?.status !== "approved";

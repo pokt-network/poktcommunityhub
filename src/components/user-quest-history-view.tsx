@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { FaTrophy } from "react-icons/fa";
@@ -78,13 +78,17 @@ export function UserQuestHistoryView({
   const [undoError, setUndoError] = useState<string | null>(null);
   const [isPendingUndo, startTransition] = useTransition();
 
-  useEffect(() => {
+  const [prevHistory, setPrevHistory] = useState(history);
+  if (prevHistory !== history) {
+    setPrevHistory(history);
     setItems(history);
-  }, [history]);
+  }
 
-  useEffect(() => {
+  const [prevTotalXp, setPrevTotalXp] = useState(user.totalXp);
+  if (prevTotalXp !== user.totalXp) {
+    setPrevTotalXp(user.totalXp);
     setUserXp(user.totalXp);
-  }, [user.totalXp]);
+  }
 
   const isSelf = Boolean(currentUserId && currentUserId === user.id);
   const isAdmin = user.role === "admin";

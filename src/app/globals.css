@@ -182,6 +182,17 @@ body {
   contain-intrinsic-size: auto 160px;
 }
 
+/* Scrollable panels without a visible scrollbar */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /*
  * Phone GPUs (e.g. Pixel 6a) stutter hard when scrolling layers with
  * backdrop-filter. Drop blur on touch devices for content; navbars opt back in
