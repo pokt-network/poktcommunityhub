@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   allowedDevOrigins: ["192.168.100.3"],
   experimental: {
+    agentUpgrade: "security",
     // Default is 1MB; proof screenshots need headroom (multipart overhead too).
     serverActions: {
       bodySizeLimit: "6mb",
