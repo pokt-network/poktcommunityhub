@@ -1,0 +1,11 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+
+engineStrict: true
+
+# Supply-chain guard: a version must have been on the registry for a day before it
+# is installable, so a hijacked release is usually pulled before it reaches us.
+# No per-package exemptions. If a security fix is urgent enough to bypass this,
+# add the exemption in its own commit that says why, and remove it the next day.
+minimumReleaseAge: 1440

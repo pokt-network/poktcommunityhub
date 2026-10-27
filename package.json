@@ -1,0 +1,35 @@
+{
+  "name": "pokt-community-hub",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "POKT Community Hub: ambassador quests, proof review, XP and Discord roles.",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "dev": "pnpm build && pnpm --filter @community/web dev",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck:web": "pnpm --filter @community/web typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:tools": "node --test tools/*.test.mjs",
+    "verify:boundaries": "node tools/verify-boundaries.mjs",
+    "deploy:host": "node tools/deploy.mjs",
+    "check": "pnpm build && pnpm typecheck:web && pnpm lint && pnpm format:check && pnpm verify:boundaries && pnpm test:tools && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "eslint": "^10.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
+  }
+}
