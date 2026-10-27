@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+# Without this the host's incremental build state is copied in, `tsc -b` decides
+# everything is up to date, emits nothing, and the image dies on MODULE_NOT_FOUND.
+**/*.tsbuildinfo
+.git
+.github
+coverage
+*.log
+.env
+.env.*
+!.env.example
+*.md
+tools/lint-fixtures
+deploy

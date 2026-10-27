@@ -1,0 +1,12 @@
+# POKT Community Hub, installed into the shared Caddy's sites/ by tools/deploy.mjs.
+# Caddy obtains and renews the certificate itself; the DNS A record must already
+# point at this server, unproxied, for the HTTP challenge to pass.
+
+community.pocket.network {
+	encode zstd gzip
+	# Proof screenshots are capped at 5 MB in the app; this leaves room for the form.
+	request_body {
+		max_size 8MB
+	}
+	reverse_proxy community-web:3000
+}

@@ -1,0 +1,22 @@
+# Cherry AS overrides, composed on top of docker-compose.yml by tools/deploy.mjs.
+#
+# The server's shared Caddy (/opt/pocket/caddy, written by the Pocket Service
+# Manager) sits on the `pocket-supplier` network and only that one, so `web` joins
+# it to be reachable. That network also carries the supplier stacks' relayers; it
+# is the same arrangement every service backend on this host already uses (PSM's
+# `backend-attach`), and web is the only container of ours on it.
+
+services:
+  web:
+    # Caddy reaches web through the network, so nothing is published on the host.
+    ports: !reset []
+    networks:
+      internal: {}
+      egress: {}
+      edge:
+        aliases: [community-web]
+
+networks:
+  edge:
+    name: pocket-supplier
+    external: true

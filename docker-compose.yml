@@ -1,0 +1,77 @@
+# The hub's stack. On Cherry AS it is composed together with
+# deploy/cherry-as.compose.yml, which joins `web` to the shared Caddy's network;
+# tools/deploy.mjs always passes both files. On its own (CI, a laptop) this file
+# publishes web on loopback only.
+#
+# Hardening, per the build brief (section 9, item 3): no ports on public
+# interfaces, non-root processes, no Docker socket, read-only root filesystems
+# where the process allows it, memory and pid limits, and Postgres on a network
+# with no route out.
+
+name: pocket-community
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt: ['no-new-privileges:true']
+  cap_drop: [ALL]
+  pids_limit: 256
+
+services:
+  postgres:
+    <<: *hardening
+    image: postgres:17-alpine
+    # The entrypoint needs these to chown the data directory and drop to `postgres`.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    env_file:
+      - path: .env.db
+        required: true
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]
+    mem_limit: 512m
+    shm_size: 128m
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    <<: *hardening
+    build:
+      context: .
+      target: web
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    image: pocket-community-web:latest
+    env_file:
+      - path: .env.web
+        required: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/apps/web/.next/cache:uid=10001,gid=10001
+    networks: [internal, egress]
+    ports:
+      - '127.0.0.1:3000:3000'
+    mem_limit: 512m
+    stop_grace_period: 30s
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://127.0.0.1:3000/health/live']
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+
+volumes:
+  pgdata:
+
+networks:
+  # No route out: Postgres never needs the internet.
+  internal:
+    internal: true
+  # The web app's way out (Discord's API from phase 3).
+  egress: {}
