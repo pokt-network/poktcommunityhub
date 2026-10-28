@@ -16,6 +16,7 @@
     "clean": "tsc -b --clean"
   },
   "dependencies": {
+    "@community/core": "workspace:*",
     "@community/shared": "workspace:*",
     "pg": "^8.23.1"
   },
