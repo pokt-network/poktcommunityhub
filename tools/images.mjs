@@ -8,7 +8,7 @@
 /** Long-running services: built, tagged per commit, asserted, retagged on rollback. */
 export const APP_SERVICES = ['web'];
 
-/** Run-once tools (compose profile `tools`). The migrator joins in phase 2. */
-export const TOOL_SERVICES = [];
+/** Run-once tools (compose profile `tools`): built and asserted, never left running. */
+export const TOOL_SERVICES = ['migrate'];
 
 export const BUILT_SERVICES = [...APP_SERVICES, ...TOOL_SERVICES];

@@ -1,5 +1,5 @@
-# POKT Community Hub images. Select a target: `web` today; `migrator` and `worker`
-# arrive in phases 2 and 6.
+# POKT Community Hub images. Select a target: `web` and `migrator` today; `worker`
+# arrives in phase 6.
 #
 # Secrets are never baked in. The host passes them at run time through mode-600
 # env files (docker-compose.yml), so an image can be shared or inspected safely.
@@ -22,6 +22,31 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm build \
   && test -f packages/store/dist/index.js \
   || (echo "tsc -b produced no output. Check .dockerignore excludes *.tsbuildinfo." && exit 1)
+
+# ── The migrator ──────────────────────────────────────────────────────────
+#
+# Its own small image: node-pg-migrate, pg and the SQL, nothing else. The
+# install is `pnpm deploy` of apps/migrator, so every version, transitive ones
+# included, is the one pnpm-lock.yaml pins. (`--legacy` because the workspace
+# does not inject packages; the migrator has no workspace dependencies to inject.)
+FROM deps AS migrator-build
+RUN pnpm --filter @community/migrator deploy --legacy --prod /out   && test -f /out/node_modules/node-pg-migrate/bin/node-pg-migrate.js   || (echo "migrator install is missing node-pg-migrate" && exit 1)
+
+FROM node:24-alpine AS migrator
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=migrator-build /out/node_modules ./node_modules
+COPY apps/migrator/package.json apps/migrator/migrate.mjs ./
+COPY packages/store/migrations ./migrations
+RUN test -n "$(ls migrations/*.sql)" || (echo "no migrations in the migrator image" && exit 1)
+
+ARG GIT_COMMIT=unknown
+ENV APP_COMMIT=${GIT_COMMIT}
+LABEL org.opencontainers.image.revision=${GIT_COMMIT}
+
+RUN addgroup -S -g 10001 community && adduser -S -u 10001 -G community community
+USER community
+CMD ["node", "migrate.mjs", "--dir", "migrations"]
 
 # ── The web build ─────────────────────────────────────────────────────────
 FROM deps AS web-builder

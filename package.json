@@ -21,7 +21,9 @@
     "test:tools": "node --test tools/*.test.mjs",
     "verify:boundaries": "node tools/verify-boundaries.mjs",
     "deploy:host": "node tools/deploy.mjs",
-    "check": "pnpm build && pnpm typecheck:web && pnpm lint && pnpm format:check && pnpm verify:boundaries && pnpm test:tools && pnpm test"
+    "check": "pnpm build && pnpm typecheck:web && pnpm lint && pnpm format:check && pnpm verify:boundaries && pnpm verify:migrations && pnpm test:tools && pnpm test",
+    "migrate": "pnpm --filter @community/migrator migrate",
+    "verify:migrations": "node tools/verify-migration-markers.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -1,0 +1,14 @@
+{
+  "name": "@community/migrator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Applies packages/store/migrations. Run once per deploy, never by the apps.",
+  "scripts": {
+    "migrate": "node migrate.mjs --dir ../../packages/store/migrations"
+  },
+  "dependencies": {
+    "node-pg-migrate": "9.0.0",
+    "pg": "^8.23.1"
+  }
+}

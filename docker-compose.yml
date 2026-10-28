@@ -36,6 +36,29 @@ services:
       timeout: 3s
       retries: 20
 
+  # Run once per deploy, before `up`: `docker compose --profile tools run --rm migrate`.
+  # Under a profile so `up` never migrates as a side effect, which also means
+  # `docker compose build` skips it; tools/deploy.mjs builds it by name.
+  migrate:
+    <<: *hardening
+    restart: 'no'
+    profiles: [tools]
+    build:
+      context: .
+      target: migrator
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    image: pocket-community-migrate:latest
+    env_file:
+      - path: .env.web
+        required: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    networks: [internal]
+    mem_limit: 256m
+
   web:
     <<: *hardening
     build:

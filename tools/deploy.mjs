@@ -17,8 +17,8 @@
  *   - A port published on 0.0.0.0 bypasses ufw through Docker's netfilter chains.
  *     Step 3 refuses one before anything starts.
  *
- * Build, then (from phase 2) migrate, then up: the apps must never meet a schema
- * they were not written for.
+ * Build, then migrate, then up: the apps must never meet a schema they were not
+ * written for.
  *
  * Rollback is a retag of the previous commit's images, printed at the end. It
  * does not undo migrations.
@@ -207,7 +207,13 @@ for (const service of BUILT_SERVICES) {
 
 // ── 5. Migrate ────────────────────────────────────────────────────────────
 step(5, 'Apply migrations');
-console.log('  no migrator yet (phase 2)');
+
+// The image built and label-checked in step 4 (`--pull never`: that one, no
+// other). It refuses if the database knows a migration it does not, and checks
+// every migration it carries is applied afterwards.
+remote(`cd ${DIR} && ${COMPOSE} --profile tools run --rm --pull never migrate`, {
+  stdio: 'inherit',
+});
 
 // ── 6. Bring it up ────────────────────────────────────────────────────────
 step(6, 'Bring the stack up');
