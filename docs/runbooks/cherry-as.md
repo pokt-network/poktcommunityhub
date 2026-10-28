@@ -49,7 +49,8 @@ The host is shared with the mainnet and beta supplier stacks, so read the "Do no
 - **Preconditions:** a clean tree, a non-root ssh user, the secret files present at mode 600, and enough free disk.
 - **Ship:** sends the tracked tree and sweeps files that are no longer tracked.
 - **Port check:** refuses any port published on a public interface.
-- **Build:** builds every image, asserts each image's revision label and tags it by commit.
+- **Build:** builds every image (web and the migrator), asserts each image's revision label and tags it by commit.
+- **Migrate:** runs the migrator image just built. It refuses if the database has applied a migration the image does not carry, and checks afterwards that every migration it carries is applied.
 - **Start:** runs `up --wait`.
 - **Readiness:** checks it from inside the stack.
 - **Caddy:** installs the site file, validates the whole Caddy config (restoring the previous file if it fails), then reloads.

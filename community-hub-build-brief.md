@@ -1,6 +1,6 @@
 # POKT Community Hub: Build Brief (rebuild)
 
-Status: **Phase 1.** Decisions answered 2026-10-26 (section 9); backup destination still open.
+Status: **Phase 2 built**, awaiting the phase 1 and 2 gate reviews. Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules awaiting confirmation (section 10).
 
 This brief is the authority for the rebuild. The existing app (tag it `mvp-reference` before anything moves) is treated as an aspirational MVP: it settles *what* the hub does, not *how*. No code is carried over by default; individual pieces may be lifted only when they are read, tested and match these conventions.
 
@@ -68,12 +68,16 @@ Valkey is **not** included. There is one app instance and the hub has no shared 
 apps/
   web/        Next.js: public pages, ambassador hub, /admin console
   worker/     Discord outbox processor (role sync, webhook announcements)
+  migrator/   applies packages/store/migrations; its own image (added in phase 2)
 packages/
   core/       Pure domain rules: quest liveness, XP, rank eligibility, review state machine. No I/O.
   store/      SQL, the pg pool, migrations, typed repositories
   discord/    Discord REST client (bot + webhook), Zod-validated responses, rate-limit aware
   shared/     config loading (Zod), logger, errors
 tools/        deploy.mjs, verify-boundaries.mjs, verify-migration-markers.mjs
+
+The migrator is an app of its own rather than a script in `store`, so its image
+installs node-pg-migrate and pg from the lockfile and nothing else.
 docs/         runbooks, reviews
 ```
 
@@ -121,7 +125,12 @@ The `pnpm check` gate runs build, lint, format:check, verify:boundaries, verify:
 - `user_roles`: user_id, role_id, source (`xp` | `quest` | `manual`), assigned_by, assigned_at
 - `discord_jobs`: outbox with kind, payload, attempts, next_attempt_at, last_error, done_at
 - `app_settings`: key/jsonb, for webhook config; the webhook URL is stored AES-256-GCM encrypted.
-- Auth.js adapter tables (`accounts`, `sessions`, `verification_token`) for database sessions.
+- Auth.js adapter tables (`accounts`, `sessions`, `verification_token`) for database sessions. **Moved to phase 3** (migration 0002): their shape depends on the adapter chosen with sign-in, so they are not guessed at here.
+
+Constraints the schema enforces (migration 0001):
+- `xp_events` is append-only by trigger: UPDATE, DELETE and TRUNCATE are refused. Its rows leave only when their user is deleted (flow 12). An undo is a new row that `reverses` the award, so each award can be reversed once.
+- A quest with submissions cannot be deleted (`ON DELETE RESTRICT`); it is closed instead. See section 10.
+- A submission's review fields are set exactly when it is not pending.
 
 ---
 
@@ -179,3 +188,15 @@ The host (checked 2026-10-26) is Ubuntu 24.04, 6 vCPU, 5.9 GB RAM with 4.4 GB av
 10. **Gates are reviewed by Jinx.**
 11. **DNS:** Jinx creates the `community` A record at GoDaddy → `84.32.25.28` (no proxy, so Caddy's HTTP-01 challenge works).
 12. **Brand:** the portal's tokens.
+
+---
+
+## 10. Phase 2 rules awaiting confirmation (Jinx, 2026-10-28)
+
+Phase 2 needed answers to these. Each is built the way described, so it can be tested, and each is cheap to change before phase 4 builds screens on it.
+
+1. **Undo removes derived roles.** Undoing an approval removes an XP rank the user no longer meets, and a quest's reward role unless another approved quest also grants it. Roles an admin assigned by hand are never touched.
+2. **A quest with submissions cannot be deleted, only closed.** Deleting it would delete the ledger rows behind awarded XP. The alternative is to undo every approval and then delete.
+3. **The monthly leaderboard uses UTC calendar months, and an undo counts in the month of the award it cancels.** Undoing last month's approval corrects last month's board rather than costing the user this month.
+4. **Proof needs exactly the quest's link count.** A quest set to 3 links needs 3, not "up to 3".
+5. **Resubmitting replaces the proof.** The old screenshot is handed back to be deleted, and the previous links are not kept.

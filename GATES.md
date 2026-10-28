@@ -6,7 +6,7 @@ A phase starts only after the previous phase's gate is reviewed. Reviewer: Jinx 
 |---|---|---|
 | 0 | Build brief with decisions answered | Passed 2026-10-26 (decisions recorded in brief section 9) |
 | 1 | `pnpm check` and CI green; the stack deployed to Cherry AS; `https://community.pocket.network/health/live` names the deployed commit over TLS | Open |
-| 2 | Schema and migrations (up/down/up clean in CI); core rules with unit, integration and adversarial tests | Not started |
+| 2 | Schema and migrations (up/down/up clean in CI); core rules with unit, integration and adversarial tests | Built 2026-10-28, awaiting review (and the phase 1 review) |
 | 3 | Discord sign-in with guild check; database sessions; admin bootstrap; adversarial authz suite | Not started |
 | 4 | Ambassador flows 1–7 | Not started |
 | 5 | Admin flows 8–12 | Not started |
