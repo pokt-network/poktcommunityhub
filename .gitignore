@@ -28,7 +28,8 @@ coverage/
 *.dump
 pgdata/
 backups/
-proofs/
+# Anchored: unanchored, it also hid the app's own /proofs route (apps/web/app/proofs).
+/proofs/
 
 # Host-only compose settings
 docker-compose.override.yml
