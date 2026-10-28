@@ -59,6 +59,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
       Discord({
         clientId: config.AUTH_DISCORD_ID,
         clientSecret: config.AUTH_DISCORD_SECRET,
+        // Discord sends `iss` on the redirect back (RFC 9207), and Auth.js checks it
+        // against this, falling back to a placeholder that never matches. The
+        // endpoints stay explicit, so this triggers no discovery request.
+        issuer: 'https://discord.com',
         // No `email`: the hub has no use for addresses and does not collect them.
         authorization: { params: { scope: 'identify guilds.members.read' } },
         profile(raw) {
