@@ -44,6 +44,21 @@ const packagesStayBelowApps = {
   ],
 };
 
+/**
+ * `core` is pure domain rules (brief section 3): no other package, no database,
+ * no network, no filesystem. Everything it decides is testable without a server.
+ */
+const corePure = {
+  ...packagesStayBelowApps,
+  patterns: [
+    ...packagesStayBelowApps.patterns,
+    {
+      group: ['@community/*', 'pg', 'pg/**', 'node:*', 'next', 'next/**'],
+      message: 'core is pure: it imports no other package and no I/O. Pass data in instead.',
+    },
+  ],
+};
+
 export default tseslint.config(
   {
     ignores: [
@@ -86,7 +101,14 @@ export default tseslint.config(
   },
 
   {
-    files: ['**/*.test.ts', 'tools/**/*.mjs'],
+    files: ['packages/core/**/*.ts', 'tools/lint-fixtures/core-imports-io.ts'],
+    rules: {
+      'no-restricted-imports': ['error', corePure],
+    },
+  },
+
+  {
+    files: ['**/*.test.ts', 'tools/**/*.mjs', 'apps/migrator/**/*.mjs'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
@@ -95,7 +117,13 @@ export default tseslint.config(
 
   {
     // Plain-JS tooling runs on Node and touches Node globals directly.
-    files: ['tools/**/*.mjs', '*.config.js', '*.config.mjs', 'apps/*/*.config.mjs'],
+    files: [
+      'tools/**/*.mjs',
+      'apps/migrator/**/*.mjs',
+      '*.config.js',
+      '*.config.mjs',
+      'apps/*/*.config.mjs',
+    ],
     languageOptions: {
       globals: {
         console: 'readonly',

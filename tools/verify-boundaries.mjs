@@ -23,6 +23,10 @@ const FIXTURES = [
     file: 'tools/lint-fixtures/package-imports-app.ts',
     what: 'a package importing an app (@community/web)',
   },
+  {
+    file: 'tools/lint-fixtures/core-imports-io.ts',
+    what: 'core importing I/O (pg)',
+  },
 ];
 
 // `ignore: false` so the global ignores in eslint.config.js do not skip them.
