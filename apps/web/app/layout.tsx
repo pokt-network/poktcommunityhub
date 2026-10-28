@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono, Rubik } from 'next/font/google';
 
 import './globals.css';
+import { SiteHeader } from './site-header';
 
 // Self-hosted by next/font: no font CDN, no layout shift. The variables feed
 // --font-primary and --font-mono in globals.css.
@@ -34,7 +35,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-theme="dark" className={`${rubik.variable} ${jetbrainsMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
+        <SiteHeader />
+        <div id="main">{children}</div>
+      </body>
     </html>
   );
 }
