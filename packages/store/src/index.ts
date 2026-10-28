@@ -8,3 +8,16 @@ export {
   type LeaderboardPeriod,
   type LeaderboardRow,
 } from './xp.js';
+export {
+  createDiscordUser,
+  createSession,
+  deleteExpiredSessions,
+  deleteSession,
+  extendSession,
+  findUser,
+  findUserByDiscordId,
+  hashSessionToken,
+  recordSignIn,
+  sessionUser,
+  type HubUser,
+} from './auth.js';

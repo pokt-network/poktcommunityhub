@@ -37,7 +37,7 @@ export async function resetDatabase(pool: Pool): Promise<void> {
   await pool.query('DELETE FROM app_settings');
 }
 
-const snowflake = () => `${randomInt(1e8, 1e9)}${randomInt(1e8, 1e9)}`;
+export const snowflake = () => `${randomInt(1e8, 1e9)}${randomInt(1e8, 1e9)}`;
 
 export async function createUser(
   pool: Pool,
