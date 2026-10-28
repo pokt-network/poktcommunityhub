@@ -28,3 +28,4 @@ export {
   type RoleSource,
 } from './ranks.js';
 export { initialRole, type UserRole } from './users.js';
+export { checkRate, SUBMISSION_LIMITS, type RateDecision, type RateRule } from './limits.js';
