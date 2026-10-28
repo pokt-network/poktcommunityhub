@@ -27,3 +27,4 @@ export {
   type RoleChanges,
   type RoleSource,
 } from './ranks.js';
+export { initialRole, type UserRole } from './users.js';
