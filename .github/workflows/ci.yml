@@ -173,6 +173,38 @@ jobs:
             -b "authjs.session-token=$(printf '0%.0s' $(seq 64))" "$base/admin")"
           case "$location" in */signin) ;; *) echo "forged cookie reached '$location'"; exit 1 ;; esac
 
+      - name: Ambassador pages are wired and gated
+        run: |
+          base=http://127.0.0.1:3000
+          some_id=00000000-0000-0000-0000-000000000000
+          # The demo seed refuses without its opt-in, then loads.
+          if docker compose exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 -q -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+            < tools/seed-demo.sql; then
+            echo "the demo seed ran without its opt-in"; exit 1
+          fi
+          { echo "SET community.seed = 'demo';"; cat tools/seed-demo.sql; } \
+            | docker compose exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 -q -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+          # Public: the board (live quests only) and the leaderboard.
+          board="$(curl -fsS "$base/")"
+          echo "$board" | grep -q 'Run a RelayMiner on testnet'
+          if echo "$board" | grep -q 'Spring AMA recap'; then echo "an ended quest is on the board"; exit 1; fi
+          # Captured first: with pipefail, curl into an early-exiting grep -q can fail.
+          leaders="$(curl -fsS "$base/leaderboard")"
+          echo "$leaders" | grep -q 'Ada Relay'
+          # Members only: profiles and proof screenshots.
+          for path in "/users/$some_id" "/proofs/$some_id"; do
+            location="$(curl -s -o /dev/null -w '%{redirect_url}' "$base$path")"
+            case "$location" in
+              */signin) ;;
+              *) echo "$path redirected to '$location', expected /signin"; exit 1 ;;
+            esac
+          done
+          # A malformed id is a 404, not a database error.
+          code="$(curl -s -o /dev/null -w '%{http_code}' "$base/quests/not-a-quest")"
+          test "$code" = 404 || { echo "/quests/not-a-quest answered $code"; exit 1; }
+          # The app can write to the proofs volume under its read-only root.
+          docker compose exec -T web sh -c 'touch /data/proofs/.probe && rm /data/proofs/.probe'
+
       - name: Readiness fails closed without the database
         run: |
           docker compose stop postgres
