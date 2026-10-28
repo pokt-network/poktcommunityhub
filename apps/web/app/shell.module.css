@@ -1,0 +1,90 @@
+/* Shared by the small single-card pages: sign-in, profile, admin placeholder. */
+
+.main {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-8) var(--space-4);
+}
+
+.card {
+  width: min(100%, 30rem);
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+  text-align: center;
+}
+
+.title {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.lede {
+  color: var(--text-secondary);
+}
+
+.notice {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--brand-coral);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--brand-blue);
+  color: var(--text-on-brand);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--transition-fast);
+}
+
+.button:hover {
+  background: var(--brand-blue-hover);
+}
+
+.quiet {
+  composes: button;
+  background: transparent;
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+}
+
+.quiet:hover {
+  background: transparent;
+  border-color: var(--text-secondary);
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-full);
+}
+
+.badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-full);
+  color: var(--brand-gold);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+}

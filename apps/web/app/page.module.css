@@ -38,3 +38,16 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
+
+.signin {
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--brand-blue);
+  color: var(--text-on-brand);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.signin:hover {
+  background: var(--brand-blue-hover);
+}

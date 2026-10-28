@@ -14,6 +14,14 @@ export default defineConfig({
         find: /^@community\/([^/]+)$/,
         replacement: fileURLToPath(new URL('./packages/$1/src/index.ts', import.meta.url)),
       },
+      // The web app's own `@/` paths (apps/web/tsconfig.json).
+      { find: /^@\/(.*)$/, replacement: fileURLToPath(new URL('./apps/web/$1', import.meta.url)) },
+      // `server-only` throws when imported outside a React server build, which a
+      // test is. The guard it gives is a build-time one; tests do not need it.
+      {
+        find: /^server-only$/,
+        replacement: fileURLToPath(new URL('./tools/test-stubs/server-only.ts', import.meta.url)),
+      },
     ],
   },
   test: {
