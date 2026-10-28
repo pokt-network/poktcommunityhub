@@ -6,12 +6,35 @@ import type { NextConfig } from 'next';
 // silently missing from the image.
 const workspaceRoot = path.join(__dirname, '..', '..');
 
+const dev = process.env['NODE_ENV'] === 'development';
+
 /**
- * Security headers on every response. The Content-Security-Policy arrives with
- * sign-in in phase 3, when the set of origins the page talks to is known; a CSP
- * written before then would be a guess, and a wrong CSP is either broken or open.
+ * Content-Security-Policy. The page talks to itself, shows Discord avatars, and
+ * posts the sign-in form to Discord (form-action covers the redirect a signed-out
+ * submit takes before hydration).
+ *
+ * Scripts allow 'unsafe-inline' because Next's App Router inlines its own
+ * bootstrap scripts; the strict alternative is a per-request nonce, which makes
+ * every page dynamic. Everything else is locked down, so an injected script
+ * still cannot load code from, or send data to, another origin.
  */
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https://cdn.discordapp.com",
+  "font-src 'self'",
+  `connect-src 'self'${dev ? ' ws:' : ''}`,
+  "form-action 'self' https://discord.com",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  ...(dev ? [] : ['upgrade-insecure-requests']),
+].join('; ');
+
+/** Security headers on every response. */
 const securityHeaders = [
+  { key: 'Content-Security-Policy', value: csp },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
