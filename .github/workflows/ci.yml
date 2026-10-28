@@ -27,6 +27,70 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
 
+  integration:
+    name: migrations + database tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: community
+          POSTGRES_PASSWORD: community
+          POSTGRES_DB: community
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U community -d community"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://community:community@localhost:5432/community
+      PGPASSWORD: community
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Migrate up
+        run: pnpm migrate
+
+      # The count is derived, never written down: a literal that happens to equal
+      # today's count stops testing a full teardown the day a migration is added.
+      - name: Migrate all the way down
+        run: |
+          count=$(ls packages/store/migrations/*.sql | wc -l)
+          node apps/migrator/node_modules/node-pg-migrate/bin/node-pg-migrate.js down "$count"             --migrations-dir packages/store/migrations --migration-file-language sql
+
+      # A failed command is not the only failure: a down that drops a table but
+      # orphans its trigger function or domain makes the next up fail in a way
+      # that looks nothing like its cause.
+      - name: Assert the teardown left nothing behind
+        run: |
+          left=$(psql -h localhost -U community -d community -tAc "
+            SELECT coalesce(string_agg(name, ', '), '') FROM (
+              SELECT table_name AS name FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name <> 'pgmigrations'
+              UNION ALL SELECT routine_name FROM information_schema.routines WHERE routine_schema = 'public'
+              UNION ALL SELECT DISTINCT trigger_name FROM information_schema.triggers WHERE trigger_schema = 'public'
+              UNION ALL SELECT domain_name FROM information_schema.domains WHERE domain_schema = 'public'
+            ) survivors")
+          if [ -n "$left" ]; then echo "::error::migrate down left objects behind: $left"; exit 1; fi
+          echo "Clean: only pgmigrations remains."
+
+      - name: Migrate back up
+        run: pnpm migrate
+
+      # REQUIRE_DATABASE_TESTS turns a missing database into a failure. Without it
+      # the integration suites skip, and this job would pass having tested nothing.
+      - name: Integration and adversarial tests
+        env:
+          DATABASE_TEST_URL: postgres://community:community@localhost:5432/community
+          REQUIRE_DATABASE_TESTS: '1'
+        run: pnpm test
+
   image:
     name: image + compose smoke
     runs-on: ubuntu-latest
@@ -42,16 +106,32 @@ jobs:
           printf 'DATABASE_URL=postgres://community:%s@postgres:5432/community\nLOG_LEVEL=info\n' "$pw" > .env.web
 
       # docker-compose.yml alone (no Cherry AS override) publishes web on loopback.
+      # Both images by name: `migrate` is in the tools profile, which a plain
+      # `docker compose build` skips.
       - name: Build
-        run: GIT_COMMIT="${GITHUB_SHA::12}" docker compose build web
+        run: GIT_COMMIT="${GITHUB_SHA::12}" docker compose --profile tools build web migrate
 
-      - name: Assert the image names this commit
+      - name: Assert every image names this commit
         run: |
-          label="$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' pocket-community-web:latest)"
-          test "$label" = "${GITHUB_SHA::12}" || { echo "image labelled '$label'"; exit 1; }
+          for image in pocket-community-web pocket-community-migrate; do
+            label="$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$image:latest")"
+            test "$label" = "${GITHUB_SHA::12}" || { echo "$image labelled '$label'"; exit 1; }
+          done
 
       - name: Up, waiting on health checks
         run: docker compose up -d --no-build --wait --wait-timeout 120
+
+      # Health is served on an unmigrated database: the app never migrates itself
+      # and must not crash-loop waiting for someone else to.
+      - name: Healthy before migrations
+        run: curl -fsS http://127.0.0.1:3000/health/ready | grep -q '"ready"'
+
+      - name: Migrate through the image
+        run: |
+          docker compose --profile tools run --rm --pull never migrate | tee migrate.log
+          grep -q '^OK: all' migrate.log
+          # A second run applies nothing and still verifies.
+          docker compose --profile tools run --rm --pull never migrate | grep -q '^pending   0'
 
       - name: Smoke
         run: |
