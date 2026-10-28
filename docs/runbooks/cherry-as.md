@@ -13,6 +13,7 @@ The host is shared with the mainnet and beta supplier stacks, so read the "Do no
 | `/opt/pocket/services/community/DEPLOYED_COMMIT` (and `.prev`) | What is running, and the rollback target |
 | `/opt/pocket/caddy/sites/community.caddy` | The hub's one file in the shared Caddy. Installed by the deploy; validated before every reload. |
 | Docker volume `pocket-community_pgdata` | The database |
+| Docker volume `pocket-community_proofs` | Proof screenshots (phase 4), WebP files readable only by the app's user. Created by the first deploy that needs it. Phase 7's backups must include it alongside the database. |
 
 ## Do not touch
 
@@ -74,4 +75,4 @@ The deploy prints the exact command. It retags the previous commit's images as `
 
 ## Backups
 
-Not yet: phase 7. The destination is still open (build brief section 9, item 8).
+Not yet: phase 7. The destination is still open (build brief section 9, item 8). Two volumes need it: the database and the proof screenshots.

@@ -1,6 +1,6 @@
 # POKT Community Hub: Build Brief (rebuild)
 
-Status: **Phases 1 and 2 passed** (Jinx, 2026-10-28); **phase 3 built**, awaiting review. Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules confirmed (section 10).
+Status: **Phases 1 and 2 passed** (Jinx, 2026-10-28); **phase 3 deployed**, awaiting review; **phase 4 built**, awaiting review (decisions in section 12). Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules confirmed (section 10).
 
 This brief is the authority for the rebuild. The existing app (tag it `mvp-reference` before anything moves) is treated as an aspirational MVP: it settles *what* the hub does, not *how*. No code is carried over by default; individual pieces may be lifted only when they are read, tested and match these conventions.
 
@@ -209,3 +209,12 @@ Phase 2 needed answers to these. Each was built the way described and Jinx confi
 2. **Discord OAuth tokens are not stored.** The access token is used once, inside the sign-in callback, for the guild check, and then dropped.
 3. **Sessions last 30 days and are renewed at most once a day of use** (the Auth.js default). They live in the database, so a demotion or a deletion applies on the next request.
 4. **The sign-in page is `/signin`.** A non-member is sent back to it with a "join the server first" message.
+
+---
+
+## 12. Phase 4 decisions (Jinx, 2026-10-28)
+
+1. **The quest board, quest pages and leaderboard are public.** Signing in is needed to submit proof.
+2. **Profiles are visible to signed-in members only.** A profile shows completed quests, XP and ranks. Pending and rejected submissions and reviewer notes are visible only to the owner and admins.
+3. **Screenshots are re-encoded on upload** (`sharp`). The type is checked by magic bytes, then the image is redrawn, which drops metadata such as GPS location and anything hidden in the file.
+4. **Submission limits are the MVP's, stored in the database:** 3 a minute with a screenshot and 6 a minute without, with at least 5 and 3 seconds between attempts respectively. They survive restarts and hold across instances.

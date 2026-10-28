@@ -39,6 +39,18 @@ include `http://localhost:3000/api/auth/callback/discord`. There is no
 "auth off" mode: with a variable missing, `/health/ready` answers 503 and every
 signed-in page fails closed.
 
+To fill the local stack with demo quests, ranks and made-up ambassadors (development
+only: the script refuses without the `SET` below, and refuses a database that
+already has quests):
+
+```bash
+{ echo "SET community.seed = 'demo';"; cat tools/seed-demo.sql; } | docker compose exec -T postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+Proof screenshots are written to `PROOFS_DIR` (default `/data/proofs`, the
+`proofs` volume in compose). Set it to a local folder when running `pnpm dev`
+outside Docker.
+
 ### Database tests
 
 The integration and adversarial suites (`*.integration.test.ts`) run against a
