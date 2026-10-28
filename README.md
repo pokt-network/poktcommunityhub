@@ -33,6 +33,12 @@ docker compose --profile tools run --rm migrate
 The app is then at http://127.0.0.1:3000. The app never migrates itself; the
 `migrate` service (profile `tools`) applies `packages/store/migrations`.
 
+Sign-in needs every variable in the sign-in block of `.env.example`. Use
+`AUTH_URL=http://localhost:3000` and a Discord application whose redirects
+include `http://localhost:3000/api/auth/callback/discord`. There is no
+"auth off" mode: with a variable missing, `/health/ready` answers 503 and every
+signed-in page fails closed.
+
 ### Database tests
 
 The integration and adversarial suites (`*.integration.test.ts`) run against a

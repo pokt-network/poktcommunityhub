@@ -1,6 +1,6 @@
 # POKT Community Hub: Build Brief (rebuild)
 
-Status: **Phase 2 built**, awaiting the phase 1 and 2 gate reviews. Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules awaiting confirmation (section 10).
+Status: **Phases 1 and 2 passed** (Jinx, 2026-10-28); **phase 3 built**, awaiting review. Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules confirmed (section 10).
 
 This brief is the authority for the rebuild. The existing app (tag it `mvp-reference` before anything moves) is treated as an aspirational MVP: it settles *what* the hub does, not *how*. No code is carried over by default; individual pieces may be lifted only when they are read, tested and match these conventions.
 
@@ -191,12 +191,21 @@ The host (checked 2026-10-26) is Ubuntu 24.04, 6 vCPU, 5.9 GB RAM with 4.4 GB av
 
 ---
 
-## 10. Phase 2 rules awaiting confirmation (Jinx, 2026-10-28)
+## 10. Phase 2 rules (confirmed by Jinx, 2026-10-28)
 
-Phase 2 needed answers to these. Each is built the way described, so it can be tested, and each is cheap to change before phase 4 builds screens on it.
+Phase 2 needed answers to these. Each was built the way described and Jinx confirmed all five.
 
 1. **Undo removes derived roles.** Undoing an approval removes an XP rank the user no longer meets, and a quest's reward role unless another approved quest also grants it. Roles an admin assigned by hand are never touched.
 2. **A quest with submissions cannot be deleted, only closed.** Deleting it would delete the ledger rows behind awarded XP. The alternative is to undo every approval and then delete.
 3. **The monthly leaderboard uses UTC calendar months, and an undo counts in the month of the award it cancels.** Undoing last month's approval corrects last month's board rather than costing the user this month.
 4. **Proof needs exactly the quest's link count.** A quest set to 3 links needs 3, not "up to 3".
 5. **Resubmitting replaces the proof.** The old screenshot is handed back to be deleted, and the previous links are not kept.
+
+---
+
+## 11. Phase 3 decisions (Jinx, 2026-10-28)
+
+1. **Our own Auth.js adapter on the existing `users` table.** The stock `@auth/pg-adapter` creates users with email and image columns and serial ids, which do not fit a table keyed on the Discord id. Discord is the only provider, so there is no `accounts` table: the Discord id on `users` is the link. Migration 0002 adds `sessions` only.
+2. **Discord OAuth tokens are not stored.** The access token is used once, inside the sign-in callback, for the guild check, and then dropped.
+3. **Sessions last 30 days and are renewed at most once a day of use** (the Auth.js default). They live in the database, so a demotion or a deletion applies on the next request.
+4. **The sign-in page is `/signin`.** A non-member is sent back to it with a "join the server first" message.

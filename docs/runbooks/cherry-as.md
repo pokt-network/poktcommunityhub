@@ -40,6 +40,18 @@ The host is shared with the mainnet and beta supplier stacks, so read the "Do no
    unset pw
    ```
 
+   Phase 3 adds sign-in. Append its variables to `.env.web` (names in `.env.example`; values from the Discord application, copied into 1Password):
+
+   ```bash
+   umask 077
+   printf 'AUTH_URL=https://community.pocket.network\n' >> .env.web
+   printf 'AUTH_SECRET=%s\n' "$(openssl rand -hex 32)" >> .env.web
+   # then add by hand, with the real values:
+   #   AUTH_DISCORD_ID=  AUTH_DISCORD_SECRET=  DISCORD_GUILD_ID=  ADMIN_BOOTSTRAP_DISCORD_IDS=
+   ```
+
+   Without them `/health/ready` answers 503 with `"config": false`, and every signed-in page fails closed.
+
    The copy of record goes in 1Password (item to be named when created). The host files are a deployment of that record, not the original.
 3. **Deploy:** `pnpm deploy:host cherry-as` from a clean checkout of the commit to ship.
 
