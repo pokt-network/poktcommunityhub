@@ -43,6 +43,32 @@ export const postgresUrl = z.preprocess(
     ),
 );
 
+/** A Discord id (a snowflake): 17 to 20 digits. Matches the `discord_snowflake` domain. */
+export const SNOWFLAKE = /^[0-9]{17,20}$/;
+
+export const snowflake = z.preprocess(
+  blankToUndefined,
+  z.string().regex(SNOWFLAKE, 'must be a Discord id (17 to 20 digits)'),
+);
+
+/** Comma-separated Discord ids; unset or empty is an empty list. */
+export const snowflakeList = z.preprocess(
+  (value) =>
+    typeof value === 'string'
+      ? value
+          .split(',')
+          .map((part) => part.trim())
+          .filter((part) => part !== '')
+      : (value ?? []),
+  z.array(z.string().regex(SNOWFLAKE, 'each entry must be a Discord id (17 to 20 digits)')),
+);
+
+/** A signing secret: at least 32 characters, so never a short placeholder. */
+export const secret = z.preprocess(
+  blankToUndefined,
+  z.string().min(32, 'must be at least 32 characters'),
+);
+
 export const logLevel = z.preprocess(
   blankToUndefined,
   z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
