@@ -104,6 +104,13 @@ jobs:
           umask 077
           printf 'POSTGRES_USER=community\nPOSTGRES_DB=community\nPOSTGRES_PASSWORD=%s\n' "$pw" > .env.db
           printf 'DATABASE_URL=postgres://community:%s@postgres:5432/community\nLOG_LEVEL=info\n' "$pw" > .env.web
+          # Sign-in config that parses but reaches no real Discord application.
+          {
+            printf 'AUTH_URL=http://localhost:3000\n'
+            printf 'AUTH_SECRET=%s\n' "$(openssl rand -hex 32)"
+            printf 'AUTH_DISCORD_ID=100000000000000001\nAUTH_DISCORD_SECRET=ci-not-a-secret\n'
+            printf 'DISCORD_GUILD_ID=100000000000000002\nADMIN_BOOTSTRAP_DISCORD_IDS=\n'
+          } >> .env.web
 
       # docker-compose.yml alone (no Cherry AS override) publishes web on loopback.
       # Both images by name: `migrate` is in the tools profile, which a plain
@@ -144,6 +151,27 @@ jobs:
           curl -fsS -o /dev/null http://127.0.0.1:3000/pokt-mark.svg
           # Security headers on every response.
           curl -fsSI http://127.0.0.1:3000/ | grep -qi '^x-frame-options: DENY'
+          curl -fsSI http://127.0.0.1:3000/ | grep -qi "^content-security-policy: default-src 'self'"
+
+      - name: Sign-in is wired and gated
+        run: |
+          base=http://127.0.0.1:3000
+          curl -fsS "$base/signin" | grep -q 'Sign in with Discord'
+          # The OAuth redirect is built from AUTH_URL, not from the container's address.
+          curl -fsS "$base/api/auth/providers" \
+            | grep -q '"callbackUrl":"http://localhost:3000/api/auth/callback/discord"'
+          # Signed out, the profile and the admin console both send you to sign in.
+          for path in /me /admin; do
+            location="$(curl -s -o /dev/null -w '%{redirect_url}' "$base$path")"
+            case "$location" in
+              */signin) ;;
+              *) echo "$path redirected to '$location', expected /signin"; exit 1 ;;
+            esac
+          done
+          # A forged session cookie is just a signed-out visitor.
+          location="$(curl -s -o /dev/null -w '%{redirect_url}' \
+            -b "authjs.session-token=$(printf '0%.0s' $(seq 64))" "$base/admin")"
+          case "$location" in */signin) ;; *) echo "forged cookie reached '$location'"; exit 1 ;; esac
 
       - name: Readiness fails closed without the database
         run: |
