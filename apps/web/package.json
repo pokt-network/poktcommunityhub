@@ -9,13 +9,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@community/core": "workspace:*",
     "@community/shared": "workspace:*",
     "@community/store": "workspace:*",
     "next": "16.4.3",
     "next-auth": "5.0.0-beta.32",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "react-markdown": "10.1.0",
     "server-only": "^0.0.1",
+    "sharp": "0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {

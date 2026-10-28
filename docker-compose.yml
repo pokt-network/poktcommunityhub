@@ -77,6 +77,10 @@ services:
     tmpfs:
       - /tmp
       - /app/apps/web/.next/cache:uid=10001,gid=10001
+    # Proof screenshots (lib/proofs.ts; PROOFS_DIR). A named volume takes the
+    # image's ownership of /data/proofs on first use, so the app can write to it.
+    volumes:
+      - proofs:/data/proofs
     networks: [internal, egress]
     ports:
       - '127.0.0.1:3000:3000'
@@ -91,6 +95,7 @@ services:
 
 volumes:
   pgdata:
+  proofs:
 
 networks:
   # No route out: Postgres never needs the internet.

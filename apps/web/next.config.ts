@@ -48,6 +48,9 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: workspaceRoot,
   turbopack: { root: workspaceRoot },
   poweredByHeader: false,
+  // Proof screenshots are up to 5 MB (lib/proofs.ts); the default 1 MB would cut
+  // them off before the action runs. Caddy caps the body at 8 MB in front of this.
+  experimental: { serverActions: { bodySizeLimit: '6mb' } },
   // The image's commit, so a stale tab reloads instead of mixing two builds' assets.
   ...(process.env['GIT_COMMIT'] ? { deploymentId: process.env['GIT_COMMIT'] } : {}),
   async headers() {

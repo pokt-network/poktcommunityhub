@@ -36,6 +36,8 @@ const schema = z.object({
   DISCORD_GUILD_ID: snowflake,
   /** First-admin bootstrap (brief section 4.5). Empty once an admin exists. */
   ADMIN_BOOTSTRAP_DISCORD_IDS: snowflakeList,
+  /** Where proof screenshots live: the `proofs` volume in docker-compose.yml. */
+  PROOFS_DIR: z.string().min(1).default('/data/proofs'),
 });
 
 export type WebConfig = z.output<typeof schema>;

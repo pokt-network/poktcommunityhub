@@ -87,8 +87,10 @@ ENV APP_COMMIT=${GIT_COMMIT}
 LABEL org.opencontainers.image.revision=${GIT_COMMIT}
 
 # Fixed ids: docker-compose.yml mounts the cache tmpfs with these, so they must not drift.
+# /data/proofs is the proofs volume's mount point: a new named volume copies its owner and mode.
 RUN addgroup -S -g 10001 community && adduser -S -u 10001 -G community community \
-  && mkdir -p apps/web/.next/cache && chown -R community:community apps/web/.next/cache
+  && mkdir -p apps/web/.next/cache && chown -R community:community apps/web/.next/cache \
+  && mkdir -p /data/proofs && chown community:community /data/proofs && chmod 700 /data/proofs
 USER community
 
 CMD ["node", "apps/web/server.js"]
