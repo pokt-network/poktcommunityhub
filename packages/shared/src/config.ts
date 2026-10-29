@@ -69,6 +69,12 @@ export const secret = z.preprocess(
   z.string().min(32, 'must be at least 32 characters'),
 );
 
+/** A 32-byte key as 64 hex characters: openssl rand -hex 32. */
+export const encryptionKey = z.preprocess(
+  blankToUndefined,
+  z.string().regex(/^[0-9a-fA-F]{64}$/, 'must be 64 hex characters (openssl rand -hex 32)'),
+);
+
 export const logLevel = z.preprocess(
   blankToUndefined,
   z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
