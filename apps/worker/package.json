@@ -1,0 +1,22 @@
+{
+  "name": "@community/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Drains the Discord outbox, announces quests and deletes expired proof screenshots.",
+  "main": "./dist/main.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "@community/core": "workspace:*",
+    "@community/discord": "workspace:*",
+    "@community/shared": "workspace:*",
+    "@community/store": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}

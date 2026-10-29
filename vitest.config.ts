@@ -25,7 +25,11 @@ export default defineConfig({
     ],
   },
   test: {
-    include: ['packages/**/src/**/*.test.ts', 'apps/**/lib/**/*.test.ts'],
+    include: [
+      'packages/**/src/**/*.test.ts',
+      'apps/**/lib/**/*.test.ts',
+      'apps/worker/src/**/*.test.ts',
+    ],
     environment: 'node',
     restoreMocks: true,
     // Integration suites (phase 2 on) share one database; files run one at a time.
