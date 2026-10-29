@@ -41,7 +41,7 @@ export const snowflake = () => `${randomInt(1e8, 1e9)}${randomInt(1e8, 1e9)}`;
 
 export async function createUser(
   pool: Pool,
-  fields: { name?: string; role?: 'ambassador' | 'admin' } = {},
+  fields: { name?: string; role?: 'ambassador' | 'admin' | 'owner' } = {},
 ): Promise<string> {
   const { rows } = await pool.query<{ id: string }>(
     'INSERT INTO users (discord_id, name, role) VALUES ($1, $2, $3) RETURNING id',

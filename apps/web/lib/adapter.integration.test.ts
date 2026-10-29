@@ -41,7 +41,7 @@ describe.skipIf(url === undefined)('hubAdapter (integration)', () => {
     expect(await adapter.getUserByAccount!(account)).toBeNull();
 
     const user = (await adapter.createUser!(fromProfile)) as HubAdapterUser;
-    expect(user.hub).toMatchObject({ discordId: DISCORD_ID, name: 'Nelly', role: 'admin' });
+    expect(user.hub).toMatchObject({ discordId: DISCORD_ID, name: 'Nelly', role: 'owner' });
     expect(user.id).not.toBe(fromProfile.id);
     expect((await adapter.getUserByAccount!(account))?.id).toBe(user.id);
     await adapter.linkAccount!({
@@ -55,7 +55,7 @@ describe.skipIf(url === undefined)('hubAdapter (integration)', () => {
     await adapter.createSession!({ sessionToken: 'cookie-token', userId: user.id, expires });
     const found = await adapter.getSessionAndUser!('cookie-token');
     expect(found?.session).toEqual({ sessionToken: 'cookie-token', userId: user.id, expires });
-    expect((found?.user as HubAdapterUser).hub.role).toBe('admin');
+    expect((found?.user as HubAdapterUser).hub.role).toBe('owner');
 
     const renewed = new Date(Date.now() + 31 * DAY);
     await adapter.updateSession!({ sessionToken: 'cookie-token', expires: renewed });

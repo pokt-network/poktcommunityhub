@@ -27,16 +27,19 @@ describe.skipIf(url === undefined)('sign-in users and sessions (integration)', (
   const newUser = (discordId: string, bootstrapIds: string[] = []) =>
     createDiscordUser(pool, { discordId, name: 'Ada', avatarUrl: null, bootstrapIds });
 
-  describe('admin bootstrap', () => {
-    it('makes the first listed user admin', async () => {
+  describe('owner bootstrap', () => {
+    it('makes the first listed user the owner', async () => {
       const id = snowflake();
-      expect((await newUser(id, [id])).role).toBe('admin');
+      expect((await newUser(id, [id])).role).toBe('owner');
     });
 
-    it('does nothing once an admin exists', async () => {
-      await createUser(pool, { role: 'admin' });
-      const id = snowflake();
-      expect((await newUser(id, [id])).role).toBe('ambassador');
+    it('does nothing once anyone is staff', async () => {
+      for (const role of ['admin', 'owner'] as const) {
+        await resetDatabase(pool);
+        await createUser(pool, { role });
+        const id = snowflake();
+        expect((await newUser(id, [id])).role).toBe('ambassador');
+      }
     });
 
     it('never promotes an existing user, even with no admins', async () => {
@@ -47,11 +50,11 @@ describe.skipIf(url === undefined)('sign-in users and sessions (integration)', (
       expect(again.role).toBe('ambassador');
     });
 
-    it('applies again after the last admin is demoted', async () => {
-      const admin = await createUser(pool, { role: 'admin' });
-      await pool.query(`UPDATE users SET role = 'ambassador' WHERE id = $1`, [admin]);
+    it('applies again once nobody is staff (an owner removed on the host)', async () => {
+      const owner = await createUser(pool, { role: 'owner' });
+      await pool.query(`UPDATE users SET role = 'ambassador' WHERE id = $1`, [owner]);
       const id = snowflake();
-      expect((await newUser(id, [id])).role).toBe('admin');
+      expect((await newUser(id, [id])).role).toBe('owner');
     });
   });
 
@@ -62,7 +65,7 @@ describe.skipIf(url === undefined)('sign-in users and sessions (integration)', (
     expect(await findUserByDiscordId(pool, id)).toMatchObject({
       name: 'Ada L.',
       avatarUrl: 'https://cdn.example/a.png',
-      role: 'admin',
+      role: 'owner',
     });
   });
 

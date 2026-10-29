@@ -27,7 +27,15 @@ export {
   type RoleChanges,
   type RoleSource,
 } from './ranks.js';
-export { initialRole, type UserRole } from './users.js';
+export {
+  initialRole,
+  isStaff,
+  planRoleChange,
+  planUserDeletion,
+  type StaffPlan,
+  type StaffRefusal,
+  type UserRole,
+} from './users.js';
 export {
   checkCategoryName,
   checkQuest,

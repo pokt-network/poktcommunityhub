@@ -1,3 +1,4 @@
+import { isStaff } from '@community/core';
 import { leaderboardRank, profile, submissionHistory } from '@community/store';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -37,7 +38,7 @@ export default async function MePage() {
         <Link className={styles.quiet} href="/">
           Find a quest
         </Link>
-        {viewer.role === 'admin' && (
+        {isStaff(viewer.role) && (
           <Link className={styles.quiet} href="/admin">
             Admin console
           </Link>

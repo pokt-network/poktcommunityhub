@@ -75,13 +75,13 @@ export async function createDiscordUser(
     );
     if (existing.rows[0] !== undefined) return toUser(existing.rows[0]);
 
-    const admins = await client.query<{ n: number }>(
-      `SELECT count(*)::int AS n FROM users WHERE role = 'admin'`,
+    const staff = await client.query<{ n: number }>(
+      `SELECT count(*)::int AS n FROM users WHERE role IN ('admin', 'owner')`,
     );
     const role = initialRole({
       discordId: input.discordId,
       bootstrapIds: input.bootstrapIds,
-      adminCount: admins.rows[0]?.n ?? 0,
+      staffCount: staff.rows[0]?.n ?? 0,
     });
 
     const { rows } = await client.query<UserRow>(

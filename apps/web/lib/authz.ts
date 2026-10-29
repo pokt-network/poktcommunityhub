@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { isStaff } from '@community/core';
 import { notFound, redirect } from 'next/navigation';
 
 import { auth, type Viewer } from './auth';
@@ -35,6 +36,6 @@ export async function requireUser(): Promise<Viewer> {
  */
 export async function requireAdmin(): Promise<Viewer> {
   const viewer = await requireUser();
-  if (viewer.role !== 'admin') notFound();
+  if (!isStaff(viewer.role)) notFound();
   return viewer;
 }

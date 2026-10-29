@@ -1,3 +1,4 @@
+import { isStaff } from '@community/core';
 import { proofFile } from '@community/store';
 
 import { requireUser } from '@/lib/authz';
@@ -19,7 +20,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!isUuid(id)) return notFound();
 
   const proof = await proofFile(db(), id);
-  if (proof === null || (proof.userId !== viewer.id && viewer.role !== 'admin')) return notFound();
+  if (proof === null || (proof.userId !== viewer.id && !isStaff(viewer.role))) return notFound();
 
   const bytes = await readProof(webConfig().PROOFS_DIR, proof.file);
   if (bytes === null) return notFound();

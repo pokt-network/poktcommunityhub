@@ -28,7 +28,7 @@ describe.skipIf(url === undefined)('sign-in adversarial (integration)', () => {
   beforeEach(() => resetDatabase(pool));
   afterAll(() => pool.end());
 
-  it('makes exactly one admin when several listed ids sign in at once', async () => {
+  it('makes exactly one owner when several listed ids sign in at once', async () => {
     const ids = Array.from({ length: 5 }, snowflake);
 
     const created = await whileLocked(pool, CREATE_LOCK, () =>
@@ -37,8 +37,8 @@ describe.skipIf(url === undefined)('sign-in adversarial (integration)', () => {
       ),
     );
 
-    expect(created.filter((user) => user.role === 'admin')).toHaveLength(1);
-    const { rows } = await pool.query(`SELECT 1 FROM users WHERE role = 'admin'`);
+    expect(created.filter((user) => user.role === 'owner')).toHaveLength(1);
+    const { rows } = await pool.query(`SELECT 1 FROM users WHERE role IN ('admin', 'owner')`);
     expect(rows).toHaveLength(1);
   });
 
