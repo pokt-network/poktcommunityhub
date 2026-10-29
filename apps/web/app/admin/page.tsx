@@ -1,4 +1,4 @@
-import { adminCounts } from '@community/store';
+import { adminCounts, queueSummary } from '@community/store';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: 'Admin' };
  */
 export default async function AdminPage() {
   const admin = await requireAdmin();
-  const counts = await adminCounts(db());
+  const [counts, queue] = await Promise.all([adminCounts(db()), queueSummary(db())]);
 
   return (
     <AdminFrame title="Admin console">
@@ -36,6 +36,10 @@ export default async function AdminPage() {
         <Link className={styles.card} href="/admin/users">
           <span className={styles.statValue}>{counts.users}</span>
           <span className={styles.muted}>Members</span>
+        </Link>
+        <Link className={styles.card} href="/admin/discord">
+          <span className={styles.statValue}>{queue.failed}</span>
+          <span className={styles.muted}>Failed Discord jobs</span>
         </Link>
       </div>
     </AdminFrame>

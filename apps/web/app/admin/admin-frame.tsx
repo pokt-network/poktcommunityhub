@@ -18,6 +18,7 @@ export function AdminFrame({ title, children }: { title: string; children: React
         <Link href="/admin/categories">Categories</Link>
         <Link href="/admin/ranks">Ranks</Link>
         <Link href="/admin/users">Users</Link>
+        <Link href="/admin/discord">Discord</Link>
       </nav>
       <h1 className={styles.title}>{title}</h1>
       {children}

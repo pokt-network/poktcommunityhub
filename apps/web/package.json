@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@community/core": "workspace:*",
+    "@community/discord": "workspace:*",
     "@community/shared": "workspace:*",
     "@community/store": "workspace:*",
     "lucide-react": "1.62.0",

@@ -12,6 +12,7 @@ import {
 } from '@/lib/admin-actions';
 import { requireAdmin } from '@/lib/authz';
 import { db } from '@/lib/db';
+import { syncMemberAction } from '@/lib/discord-actions';
 import { formatDate, STATUS_LABELS } from '@/lib/format';
 import { isUuid } from '@/lib/ids';
 
@@ -120,6 +121,14 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
             </label>
           </ActionForm>
         )}
+        <ActionForm
+          action={syncMemberAction}
+          submit="Sync Discord roles"
+          tone="quiet"
+          className={styles.inline}
+        >
+          <input type="hidden" name="userId" value={id} />
+        </ActionForm>
       </section>
 
       <section className={styles.heading} aria-labelledby="history-heading">

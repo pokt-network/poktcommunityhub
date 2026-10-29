@@ -44,6 +44,9 @@ importers:
       '@community/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@community/discord':
+        specifier: workspace:*
+        version: link:../../packages/discord
       '@community/shared':
         specifier: workspace:*
         version: link:../../packages/shared

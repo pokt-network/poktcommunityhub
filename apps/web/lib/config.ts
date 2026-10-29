@@ -1,6 +1,7 @@
 import 'server-only';
 
 import {
+  encryptionKey,
   loadConfig,
   logLevel,
   originUrl,
@@ -36,6 +37,13 @@ const schema = z.object({
   DISCORD_GUILD_ID: snowflake,
   /** First-admin bootstrap (brief section 4.5). Empty once an admin exists. */
   ADMIN_BOOTSTRAP_DISCORD_IDS: snowflakeList,
+  /**
+   * The bot (phase 6): the console's Discord page checks it, creates missing
+   * roles and tests the webhook with it. The worker reads the same token.
+   */
+  DISCORD_BOT_TOKEN: requiredString,
+  /** Encrypts the announcements webhook at rest (brief section 9.7). */
+  SETTINGS_ENCRYPTION_KEY: encryptionKey,
   /** Where proof screenshots live: the `proofs` volume in docker-compose.yml. */
   PROOFS_DIR: z.string().min(1).default('/data/proofs'),
 });
