@@ -12,6 +12,7 @@
     "@community/core": "workspace:*",
     "@community/shared": "workspace:*",
     "@community/store": "workspace:*",
+    "lucide-react": "1.62.0",
     "next": "16.4.3",
     "next-auth": "5.0.0-beta.32",
     "react": "19.3.1",

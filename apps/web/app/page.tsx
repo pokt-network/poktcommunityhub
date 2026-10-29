@@ -7,6 +7,7 @@ import { formatDate, formatXp, STATUS_LABELS } from '@/lib/format';
 import { isUuid } from '@/lib/ids';
 
 import styles from './hub.module.css';
+import { QuestIcon } from './quest-icon';
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -97,9 +98,7 @@ export default async function QuestBoard({ searchParams }: { searchParams: Searc
             <li key={q.id}>
               <Link className={styles.card} href={`/quests/${q.id}`}>
                 <div className={styles.cardTop}>
-                  <span className={styles.icon} aria-hidden>
-                    {q.icon ?? '◆'}
-                  </span>
+                  <QuestIcon icon={q.icon} />
                   {q.viewerStatus !== null && (
                     <span className={styles.chip} data-status={q.viewerStatus}>
                       {STATUS_LABELS[q.viewerStatus]}

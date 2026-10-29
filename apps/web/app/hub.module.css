@@ -468,3 +468,15 @@
   composes: row;
   justify-content: space-between;
 }
+
+/* ── Quest icon tile (brief section 13.2) ── */
+.iconTile {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-lg);
+  background: rgba(2, 90, 242, 0.15);
+  color: var(--text-link);
+}

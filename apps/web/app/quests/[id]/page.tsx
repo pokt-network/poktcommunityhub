@@ -12,6 +12,7 @@ import { isUuid } from '@/lib/ids';
 import { signInWithDiscord } from '@/lib/session-actions';
 
 import styles from '../../hub.module.css';
+import { QuestIcon } from '../../quest-icon';
 import { SubmitProofForm } from './submit-form';
 
 type Params = Promise<{ id: string }>;
@@ -65,9 +66,7 @@ export default async function QuestPage({
 
       <div className={styles.heading}>
         <div className={styles.row}>
-          <span className={styles.icon} aria-hidden>
-            {quest.icon ?? '◆'}
-          </span>
+          <QuestIcon icon={quest.icon} />
           <h1 className={styles.title}>{quest.title}</h1>
         </div>
         <div className={styles.meta}>
