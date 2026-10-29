@@ -312,8 +312,13 @@ export async function setQuestStatus(
   pool: Pool,
   input: { id: string; status: 'active' | 'closed' },
 ): Promise<CatalogResult> {
+  // Reopening a closed quest announces it again once it is live (section 14.5).
   const { rowCount } = await pool.query(
-    'UPDATE quests SET status = $2, updated_at = now() WHERE id = $1',
+    `UPDATE quests
+        SET announced_at = CASE WHEN status = 'closed' AND $2 = 'active' THEN NULL
+                                ELSE announced_at END,
+            status = $2, updated_at = now()
+      WHERE id = $1`,
     [input.id, input.status],
   );
   return rowCount === 1 ? { ok: true, value: null } : { ok: false, reason: 'not_found' };
@@ -518,13 +523,16 @@ export async function updateRank(
       );
       thresholdChanged = prior.xp_required !== input.rank.xpRequired;
       if (prior.discord_role_id !== input.rank.discordRoleId) {
-        // The rank now maps to another Discord role: every holder needs a sync.
+        // The rank now maps to another Discord role: every holder needs a sync,
+        // which also takes off the role it used to map to (no longer linked, so
+        // the worker would not otherwise know it is the hub's to remove).
         const holders = await client.query<{ user_id: string }>(
           'SELECT user_id FROM user_roles WHERE role_id = $1',
           [input.id],
         );
+        const unlinked = prior.discord_role_id === null ? [] : [prior.discord_role_id];
         for (const { user_id } of holders.rows) {
-          await enqueue(client, 'sync_member_roles', { userId: user_id });
+          await enqueue(client, 'sync_member_roles', { userId: user_id, unlinked });
         }
       }
       return { ok: true, value: null };
@@ -553,10 +561,17 @@ export async function deleteRank(pool: Pool, id: string): Promise<CatalogResult<
       'SELECT user_id FROM user_roles WHERE role_id = $1',
       [id],
     );
-    const { rowCount } = await client.query('DELETE FROM server_roles WHERE id = $1', [id]);
-    if (rowCount !== 1) return rollback({ ok: false, reason: 'not_found' } as const);
+    const deleted = await client.query<{ discord_role_id: string | null }>(
+      'DELETE FROM server_roles WHERE id = $1 RETURNING discord_role_id',
+      [id],
+    );
+    const row = deleted.rows[0];
+    if (row === undefined) return rollback({ ok: false, reason: 'not_found' } as const);
+    // The Discord role is no longer linked once the rank is gone; the job names
+    // it so the worker still takes it off.
+    const unlinked = row.discord_role_id === null ? [] : [row.discord_role_id];
     for (const { user_id } of holders.rows) {
-      await enqueue(client, 'sync_member_roles', { userId: user_id });
+      await enqueue(client, 'sync_member_roles', { userId: user_id, unlinked });
     }
     return { ok: true, value: holders.rows.length };
   });
