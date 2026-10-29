@@ -1,5 +1,4 @@
-# POKT Community Hub images. Select a target: `web` and `migrator` today; `worker`
-# arrives in phase 6.
+# POKT Community Hub images. Select a target: `web`, `worker` or `migrator`.
 #
 # Secrets are never baked in. The host passes them at run time through mode-600
 # env files (docker-compose.yml), so an image can be shared or inspected safely.
@@ -47,6 +46,29 @@ LABEL org.opencontainers.image.revision=${GIT_COMMIT}
 RUN addgroup -S -g 10001 community && adduser -S -u 10001 -G community community
 USER community
 CMD ["node", "migrate.mjs", "--dir", "migrations"]
+
+# ── The worker ───────────────────────────────────────────────────────────
+#
+# `pnpm deploy` of apps/worker: its dist and a production install in which the
+# workspace packages are copies of their `files` (dist only), nothing else.
+FROM deps AS worker-build
+RUN pnpm --filter @community/worker deploy --legacy --prod /out   && test -f /out/dist/main.js   && test -f /out/node_modules/@community/store/dist/index.js   || (echo "worker install is missing its build or a workspace package" && exit 1)
+
+FROM node:24-alpine AS worker
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=worker-build /out ./
+
+ARG GIT_COMMIT=unknown
+ENV APP_COMMIT=${GIT_COMMIT}
+LABEL org.opencontainers.image.revision=${GIT_COMMIT}
+
+# The same fixed ids as web: both write to the proofs volume (the worker deletes
+# expired screenshots, brief section 9.6).
+RUN addgroup -S -g 10001 community && adduser -S -u 10001 -G community community   && mkdir -p /data/proofs && chown community:community /data/proofs && chmod 700 /data/proofs
+USER community
+
+CMD ["node", "dist/main.js"]
 
 # ── The web build ─────────────────────────────────────────────────────────
 FROM deps AS web-builder

@@ -6,7 +6,7 @@
  */
 
 /** Long-running services: built, tagged per commit, asserted, retagged on rollback. */
-export const APP_SERVICES = ['web'];
+export const APP_SERVICES = ['web', 'worker'];
 
 /** Run-once tools (compose profile `tools`): built and asserted, never left running. */
 export const TOOL_SERVICES = ['migrate'];
