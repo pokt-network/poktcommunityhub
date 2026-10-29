@@ -480,3 +480,107 @@
   background: rgba(2, 90, 242, 0.15);
   color: var(--text-link);
 }
+
+/* ── Forms ── */
+.formStack {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-3);
+}
+
+.textarea {
+  composes: wide;
+  min-height: 10rem;
+  resize: vertical;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.inline > div {
+  display: contents;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.danger {
+  composes: button;
+  background: var(--state-failed);
+}
+
+.danger:hover {
+  background: var(--brand-coral);
+}
+
+.iconChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border: 0;
+}
+
+.iconChoice {
+  position: relative;
+  cursor: pointer;
+}
+
+.iconChoice input {
+  position: absolute;
+  opacity: 0;
+}
+
+.iconChoice input:checked + span {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 2px;
+}
+
+.iconChoice input:focus-visible + span {
+  box-shadow: var(--focus-ring);
+}
+
+/* ── Admin console ── */
+.adminNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.adminNav a {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.adminNav a:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-4);
+}
