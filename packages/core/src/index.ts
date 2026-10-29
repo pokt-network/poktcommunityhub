@@ -54,3 +54,26 @@ export {
   type RankInput,
 } from './catalog.js';
 export { checkRate, SUBMISSION_LIMITS, type RateDecision, type RateRule } from './limits.js';
+export {
+  afterJobFailure,
+  ANNOUNCE_EVENTS,
+  ANNOUNCE_LABELS,
+  announcementText,
+  botReadiness,
+  checkWebhookSettings,
+  escapeDiscord,
+  isWebhookUrl,
+  JOB_RETRY,
+  maskWebhook,
+  planMemberSync,
+  PROOF_RETENTION_DAYS,
+  proofRetentionCutoff,
+  roleColor,
+  WEBHOOK_LIMITS,
+  type AnnounceEvent,
+  type AnnouncementFacts,
+  type BotReadiness,
+  type GuildRole,
+  type JobFailure,
+  type WebhookFields,
+} from './discord.js';

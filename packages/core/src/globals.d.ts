@@ -7,4 +7,7 @@ declare class URL {
   constructor(input: string, base?: string);
   readonly protocol: string;
   readonly hostname: string;
+  readonly pathname: string;
+  readonly search: string;
+  readonly hash: string;
 }
