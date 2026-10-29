@@ -1,6 +1,6 @@
 # POKT Community Hub: Build Brief (rebuild)
 
-Status: **Phases 1 and 2 passed** (Jinx, 2026-10-28); **phases 3 and 4 deployed**, awaiting review; **phase 5 built**, awaiting review (decisions in section 13). Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules confirmed (section 10).
+Status: **Phases 1 and 2 passed** (Jinx, 2026-10-28); **phases 3 and 4 deployed**, awaiting review; **phase 5 deployed**, awaiting review (decisions in section 13); **phase 6 in progress** (decisions in section 14). Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules confirmed (section 10).
 
 This brief is the authority for the rebuild. The existing app (tag it `mvp-reference` before anything moves) is treated as an aspirational MVP: it settles *what* the hub does, not *how*. No code is carried over by default; individual pieces may be lifted only when they are read, tested and match these conventions.
 
@@ -228,3 +228,16 @@ Phase 2 needed answers to these. Each was built the way described and Jinx confi
 3. **No self-review.** An admin cannot approve, reject or undo their own submission. **A rejection needs a note** (the ambassador sees it when they resubmit); an approval note is optional.
 4. **Editing a rank's XP threshold, or a quest's reward role, rechecks everyone at once**: members who now qualify gain the rank, members who no longer do lose it. Hand-assigned ranks are never touched (section 10.1). Changing a quest's XP never alters XP already awarded.
 5. **A rank members hold can be deleted after a confirmation** that says how many hold it; it is removed from all of them. Deleting a user also needs a confirmation (typing their name), and removes their submissions, XP, sessions and screenshots.
+
+## 14. Phase 6 decisions (Jinx, 2026-10-29)
+
+1. **The hub manages only roles linked to a rank.** A sync adds the linked roles a member holds in the hub and removes the linked roles they do not. Every other Discord role is left alone, so a linked role a moderator gives by hand is removed at the next sync.
+2. **A member who has left the server** ends their job as done, with a note; it is not retried.
+3. **Retries:** a 429 waits as long as Discord asks. Other failures retry after 30 seconds, doubling to at most an hour, and give up after 10 attempts. Failed jobs are listed in the console with a Retry button.
+4. **Drift is fixed by a "Sync all members" button** only. There is no scheduled full sync.
+5. **New-quest announcements** go out when a quest is created or reopened while live, or when a scheduled quest's start time arrives.
+6. **All three announcement toggles start off** (new quest, quest completed, role unlocked); the last two name members in Discord.
+7. **Bot status is a REST check**, not a gateway connection: the token is valid, the bot is in the server, it has Manage Roles, and its highest role is above every linked role.
+8. **The 60-day screenshot deletion** (section 9, item 6) runs in the worker from this phase; phase 7 verifies it.
+
+Gates 3 to 5 stay unrecorded until Jerry runs the first live tests, once everything is live.

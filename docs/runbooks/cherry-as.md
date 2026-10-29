@@ -13,7 +13,7 @@ The host is shared with the mainnet and beta supplier stacks, so read the "Do no
 | `/opt/pocket/services/community/DEPLOYED_COMMIT` (and `.prev`) | What is running, and the rollback target |
 | `/opt/pocket/caddy/sites/community.caddy` | The hub's one file in the shared Caddy. Installed by the deploy; validated before every reload. |
 | Docker volume `pocket-community_pgdata` | The database |
-| Docker volume `pocket-community_proofs` | Proof screenshots (phase 4), WebP files readable only by the app's user. Created by the first deploy that needs it. Phase 7's backups must include it alongside the database. |
+| Docker volume `pocket-community_proofs` | Proof screenshots (phase 4), WebP files readable only by the app's user (web writes them; the worker deletes them 60 days after review). Created by the first deploy that needs it. Phase 7's backups must include it alongside the database. |
 
 ## Do not touch
 
@@ -24,6 +24,8 @@ The host is shared with the mainnet and beta supplier stacks, so read the "Do no
 ## Networks
 
 `web` joins `pocket-supplier`, the network the shared Caddy is on, under the alias `community-web`. Every other service backend on this host joins it the same way.
+
+`worker` (phase 6) is on the internal network and the egress network, to reach Discord. It joins nothing else and serves nothing.
 
 `postgres` is on an internal network with no route out, so it cannot reach the internet. No container of ours publishes a port on the host; the deploy refuses if one does.
 
@@ -53,8 +55,23 @@ The host is shared with the mainnet and beta supplier stacks, so read the "Do no
 
    Without them `/health/ready` answers 503 with `"config": false`, and every signed-in page fails closed.
 
+   Phase 6 adds the bot and the worker, which reads the same `.env.web`. Append:
+
+   ```bash
+   umask 077
+   printf 'SETTINGS_ENCRYPTION_KEY=%s\n' "$(openssl rand -hex 32)" >> .env.web
+   # then add by hand, with the real value:
+   #   DISCORD_BOT_TOKEN=   (developer portal → the application → Bot → Reset Token)
+   ```
+
+   Without them neither `web` nor `worker` starts, and the deploy stops at `up --wait`. Changing `SETTINGS_ENCRYPTION_KEY` later makes the saved webhook unreadable; the console then asks for it again.
+
    The copy of record goes in 1Password (item to be named when created). The host files are a deployment of that record, not the original.
-3. **Deploy:** `pnpm deploy:host cherry-as` from a clean checkout of the commit to ship.
+3. **The bot in the POKT server** (phase 6; someone with Manage Server there does this):
+   - Invite it: developer portal → the application → OAuth2 → URL Generator, scope `bot`, permission Manage Roles; open the URL and choose the POKT server.
+   - Server Settings → Roles: drag the bot's role above every role a rank links to. Discord lets a bot assign only roles below its own.
+   - The console's Discord page (`/admin/discord`) then says "Ready to sync roles", or names what is still wrong.
+4. **Deploy:** `pnpm deploy:host cherry-as` from a clean checkout of the commit to ship.
 
 ## Deploying
 
@@ -62,7 +79,7 @@ The host is shared with the mainnet and beta supplier stacks, so read the "Do no
 - **Preconditions:** a clean tree, a non-root ssh user, the secret files present at mode 600, and enough free disk.
 - **Ship:** sends the tracked tree and sweeps files that are no longer tracked.
 - **Port check:** refuses any port published on a public interface.
-- **Build:** builds every image (web and the migrator), asserts each image's revision label and tags it by commit.
+- **Build:** builds every image (web, the worker and the migrator), asserts each image's revision label and tags it by commit.
 - **Migrate:** runs the migrator image just built. It refuses if the database has applied a migration the image does not carry, and checks afterwards that every migration it carries is applied.
 - **Start:** runs `up --wait`.
 - **Readiness:** checks it from inside the stack.
