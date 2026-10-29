@@ -69,6 +69,34 @@ The host is shared with the mainnet and beta supplier stacks, so read the "Do no
 - **Caddy:** installs the site file, validates the whole Caddy config (restoring the previous file if it fails), then reloads.
 - **Public check:** probes the public URL.
 
+## Ownership
+
+The hub has one owner (build brief section 13.1): the only account that promotes, demotes or deletes admins. Nobody can change the owner in the app. Migration 0005 made the single admin at the time the owner.
+
+To hand ownership to another member, who must have signed in once, run this on the host. It demotes the current owner to admin and promotes the new one in one transaction:
+
+```bash
+ssh cherry-as
+cd /opt/pocket/services/community
+docker compose -f docker-compose.yml -f deploy/cherry-as.compose.yml exec -T postgres   sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v new_owner=DISCORD_ID' <<'SQL'
+BEGIN;
+SET LOCAL community.new_owner = :'new_owner';
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM users WHERE discord_id = current_setting('community.new_owner')) THEN
+    RAISE EXCEPTION 'no member with Discord id %: nothing changed', current_setting('community.new_owner');
+  END IF;
+END
+$$;
+UPDATE users SET role = 'admin' WHERE role = 'owner';
+UPDATE users SET role = 'owner' WHERE discord_id = current_setting('community.new_owner');
+SELECT name, role FROM users WHERE role IN ('owner', 'admin') ORDER BY role DESC, name;
+COMMIT;
+SQL
+```
+
+Replace `DISCORD_ID` with the new owner's Discord user id. A mistyped id stops the script before anything changes. The change applies on each person's next page load.
+
 ## Rollback
 
 The deploy prints the exact command. It retags the previous commit's images as `latest`, runs `up -d --no-build`, and restores `DEPLOYED_COMMIT`. It does not undo migrations.

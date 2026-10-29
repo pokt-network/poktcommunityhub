@@ -1,6 +1,6 @@
 # POKT Community Hub: Build Brief (rebuild)
 
-Status: **Phases 1 and 2 passed** (Jinx, 2026-10-28); **phase 3 deployed**, awaiting review; **phase 4 built**, awaiting review (decisions in section 12). Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules confirmed (section 10).
+Status: **Phases 1 and 2 passed** (Jinx, 2026-10-28); **phases 3 and 4 deployed**, awaiting review; **phase 5 built**, awaiting review (decisions in section 13). Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules confirmed (section 10).
 
 This brief is the authority for the rebuild. The existing app (tag it `mvp-reference` before anything moves) is treated as an aspirational MVP: it settles *what* the hub does, not *how*. No code is carried over by default; individual pieces may be lifted only when they are read, tested and match these conventions.
 
@@ -218,3 +218,13 @@ Phase 2 needed answers to these. Each was built the way described and Jinx confi
 2. **Profiles are visible to signed-in members only.** A profile shows completed quests, XP and ranks. Pending and rejected submissions and reviewer notes are visible only to the owner and admins.
 3. **Screenshots are re-encoded on upload** (`sharp`). The type is checked by magic bytes, then the image is redrawn, which drops metadata such as GPS location and anything hidden in the file.
 4. **Submission limits are the MVP's, stored in the database:** 3 a minute with a screenshot and 6 a minute without, with at least 5 and 3 seconds between attempts respectively. They survive restarts and hold across instances.
+
+---
+
+## 13. Phase 5 decisions (Jinx, 2026-10-28)
+
+1. **An owner role above admin.** There is exactly one owner (the database enforces at most one). Only the owner promotes, demotes or deletes admins. Admins cannot change anyone's role and can delete only ambassador accounts; otherwise they have the whole console. Nobody can demote or delete the owner in the app, the owner included. Handing over ownership is a documented step on the host, not an app action. The migration makes the existing single admin the owner; on a fresh database the bootstrap creates the owner.
+2. **Quest icons come from a fixed set**, drawn in the brand colours, not free text.
+3. **No self-review.** An admin cannot approve, reject or undo their own submission. **A rejection needs a note** (the ambassador sees it when they resubmit); an approval note is optional.
+4. **Editing a rank's XP threshold, or a quest's reward role, rechecks everyone at once**: members who now qualify gain the rank, members who no longer do lose it. Hand-assigned ranks are never touched (section 10.1). Changing a quest's XP never alters XP already awarded.
+5. **A rank members hold can be deleted after a confirmation** that says how many hold it; it is removed from all of them. Deleting a user also needs a confirmation (typing their name), and removes their submissions, XP, sessions and screenshots.
