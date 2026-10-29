@@ -110,17 +110,21 @@ jobs:
             printf 'AUTH_SECRET=%s\n' "$(openssl rand -hex 32)"
             printf 'AUTH_DISCORD_ID=100000000000000001\nAUTH_DISCORD_SECRET=ci-not-a-secret\n'
             printf 'DISCORD_GUILD_ID=100000000000000002\nADMIN_BOOTSTRAP_DISCORD_IDS=\n'
+            # A token Discord would refuse; with no linked ranks and announcements
+            # off, the worker never sends it.
+            printf 'DISCORD_BOT_TOKEN=ci-not-a-token\n'
+            printf 'SETTINGS_ENCRYPTION_KEY=%s\n' "$(openssl rand -hex 32)"
           } >> .env.web
 
       # docker-compose.yml alone (no Cherry AS override) publishes web on loopback.
-      # Both images by name: `migrate` is in the tools profile, which a plain
+      # Every image by name: `migrate` is in the tools profile, which a plain
       # `docker compose build` skips.
       - name: Build
-        run: GIT_COMMIT="${GITHUB_SHA::12}" docker compose --profile tools build web migrate
+        run: GIT_COMMIT="${GITHUB_SHA::12}" docker compose --profile tools build web worker migrate
 
       - name: Assert every image names this commit
         run: |
-          for image in pocket-community-web pocket-community-migrate; do
+          for image in pocket-community-web pocket-community-worker pocket-community-migrate; do
             label="$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$image:latest")"
             test "$label" = "${GITHUB_SHA::12}" || { echo "$image labelled '$label'"; exit 1; }
           done
@@ -162,7 +166,7 @@ jobs:
             | grep -q '"callbackUrl":"http://localhost:3000/api/auth/callback/discord"'
           # Signed out, the profile and every console page send you to sign in.
           for path in /me /admin /admin/review /admin/quests /admin/quests/new /admin/categories \
-            /admin/ranks /admin/users; do
+            /admin/ranks /admin/users /admin/discord; do
             location="$(curl -s -o /dev/null -w '%{redirect_url}' "$base$path")"
             case "$location" in
               */signin) ;;
@@ -205,6 +209,26 @@ jobs:
           test "$code" = 404 || { echo "/quests/not-a-quest answered $code"; exit 1; }
           # The app can write to the proofs volume under its read-only root.
           docker compose exec -T web sh -c 'touch /data/proofs/.probe && rm /data/proofs/.probe'
+
+      # The seed's live quests were never announced, so the worker queues them and,
+      # with announcements off (brief section 14.6), finishes each with a note.
+      # That runs the whole loop against the real image without calling Discord.
+      - name: The worker drains the outbox
+        run: |
+          sql() {
+            docker compose exec -T postgres sh -c \
+              'psql -v ON_ERROR_STOP=1 -tA -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<< "$1"
+          }
+          for _ in $(seq 30); do
+            done_count="$(sql "SELECT count(*) FROM discord_jobs WHERE note = 'announcements of this kind are off'")"
+            [ "$done_count" -gt 0 ] && break
+            sleep 2
+          done
+          [ "$done_count" -gt 0 ] || { echo "the worker finished no job"; exit 1; }
+          left="$(sql "SELECT count(*) FROM discord_jobs WHERE done_at IS NULL")"
+          [ "$left" = 0 ] || { echo "$left jobs not done"; exit 1; }
+          docker compose exec -T worker sh -c 'touch /data/proofs/.probe && rm /data/proofs/.probe'
+          test "$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q worker)")" = healthy
 
       - name: Readiness fails closed without the database
         run: |
