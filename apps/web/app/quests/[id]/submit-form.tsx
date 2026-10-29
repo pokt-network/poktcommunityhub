@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { startTransition, useActionState } from 'react';
 
 import { submitProofAction, type SubmitState } from '@/lib/quest-actions';
 
@@ -21,7 +21,17 @@ export function SubmitProofForm({
   });
 
   return (
-    <form action={action} className={styles.list}>
+    <form
+      action={action}
+      // React resets a form after its action runs; on a refusal that would wipe
+      // the links a member typed. Submitting through onSubmit keeps them.
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        startTransition(() => action(data));
+      }}
+      className={styles.list}
+    >
       <input type="hidden" name="questId" value={questId} />
       {Array.from({ length: linkCount }, (_, i) => (
         <label key={i} className={styles.field}>
