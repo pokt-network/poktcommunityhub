@@ -161,7 +161,8 @@ jobs:
           curl -fsS "$base/api/auth/providers" \
             | grep -q '"callbackUrl":"http://localhost:3000/api/auth/callback/discord"'
           # Signed out, the profile and every console page send you to sign in.
-          for path in /me /admin /admin/review /admin/quests /admin/quests/new /admin/categories \n            /admin/ranks /admin/users; do
+          for path in /me /admin /admin/review /admin/quests /admin/quests/new /admin/categories \
+            /admin/ranks /admin/users; do
             location="$(curl -s -o /dev/null -w '%{redirect_url}' "$base$path")"
             case "$location" in
               */signin) ;;
