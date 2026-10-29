@@ -150,6 +150,7 @@ describe.skipIf(url === undefined)('submitProof (integration)', () => {
       submissionId: first.submissionId,
       action: 'reject',
       actorId: admin,
+      note: 'Try again.',
     });
 
     const results = await whileLocked(
@@ -169,6 +170,7 @@ describe.skipIf(url === undefined)('submitProof (integration)', () => {
       submissionId: first.submissionId,
       action: 'reject',
       actorId: admin,
+      note: 'Try again.',
     });
     await reviewSubmission(pool, {
       submissionId: first.submissionId,

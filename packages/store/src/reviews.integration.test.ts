@@ -129,7 +129,7 @@ describe.skipIf(url === undefined)('reviewSubmission (integration)', () => {
 
   it('undo of a rejection returns it to pending with no ledger entry', async () => {
     const submission = await createSubmission(pool, user, await createQuest(pool));
-    await review(submission, 'reject');
+    await review(submission, 'reject', 'try again');
 
     expect(await review(submission, 'undo')).toMatchObject({
       ok: true,
@@ -158,7 +158,10 @@ describe.skipIf(url === undefined)('reviewSubmission (integration)', () => {
     expect(await review(submission, 'undo')).toEqual({ ok: false, reason: 'not_reviewed' });
     await review(submission, 'approve');
     expect(await review(submission, 'approve')).toEqual({ ok: false, reason: 'not_pending' });
-    expect(await review(submission, 'reject')).toEqual({ ok: false, reason: 'not_pending' });
+    expect(await review(submission, 'reject', 'again')).toEqual({
+      ok: false,
+      reason: 'not_pending',
+    });
     expect(await xpTotal(pool, user)).toBe(50);
   });
 

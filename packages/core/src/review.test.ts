@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { planReview, type ReviewAction, type SubmissionStatus } from './review.js';
+import {
+  checkReview,
+  MAX_REVIEW_NOTE_LENGTH,
+  planReview,
+  type ReviewAction,
+  type SubmissionStatus,
+} from './review.js';
 
 const plan = (status: SubmissionStatus, action: ReviewAction, awardedXp = 0, questXp = 50) =>
   planReview({ status, action, questXp, awardedXp });
@@ -70,5 +76,49 @@ describe('planReview', () => {
   it('throws on a non-positive or fractional quest XP rather than awarding it', () => {
     expect(() => plan('pending', 'approve', 0, 0)).toThrow(RangeError);
     expect(() => plan('pending', 'approve', 0, 1.5)).toThrow(RangeError);
+  });
+});
+
+describe('checkReview', () => {
+  const base = { actorId: 'admin', submitterId: 'amb' };
+
+  it('refuses any review of your own submission', () => {
+    for (const action of ['approve', 'reject', 'undo'] as const) {
+      expect(checkReview({ ...base, actorId: 'amb', action, note: 'fine' })).toEqual({
+        ok: false,
+        reason: 'own_submission',
+      });
+    }
+  });
+
+  it('requires a note to reject, and trims it', () => {
+    expect(checkReview({ ...base, action: 'reject', note: '   ' })).toEqual({
+      ok: false,
+      reason: 'note_required',
+    });
+    expect(checkReview({ ...base, action: 'reject', note: null })).toEqual({
+      ok: false,
+      reason: 'note_required',
+    });
+    expect(checkReview({ ...base, action: 'reject', note: ' Link is dead. ' })).toEqual({
+      ok: true,
+      note: 'Link is dead.',
+    });
+  });
+
+  it('makes the note optional to approve, storing an empty one as null', () => {
+    expect(checkReview({ ...base, action: 'approve', note: '' })).toEqual({ ok: true, note: null });
+    expect(checkReview({ ...base, action: 'approve', note: 'Great work' })).toEqual({
+      ok: true,
+      note: 'Great work',
+    });
+  });
+
+  it('caps the note length', () => {
+    const long = 'x'.repeat(MAX_REVIEW_NOTE_LENGTH + 1);
+    expect(checkReview({ ...base, action: 'approve', note: long })).toEqual({
+      ok: false,
+      reason: 'note_too_long',
+    });
   });
 });

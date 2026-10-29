@@ -59,3 +59,29 @@ export function planReview(input: {
       return { ok: true, from: status, to: 'pending', xpDelta: 0 - awardedXp };
   }
 }
+
+export const MAX_REVIEW_NOTE_LENGTH = 1000;
+
+export type ReviewerRefusal =
+  /** An admin never reviews, or undoes the review of, their own submission (section 13.3). */
+  | 'own_submission'
+  /** A rejection must say why: the ambassador reads it when they resubmit. */
+  | 'note_required'
+  | 'note_too_long';
+
+/**
+ * Who may review, and what a review must say (brief section 13.3). Returns the
+ * note to store: trimmed, and null when empty.
+ */
+export function checkReview(input: {
+  action: ReviewAction;
+  note: string | null;
+  actorId: string;
+  submitterId: string;
+}): { ok: true; note: string | null } | { ok: false; reason: ReviewerRefusal } {
+  if (input.actorId === input.submitterId) return { ok: false, reason: 'own_submission' };
+  const note = input.note?.trim() ?? '';
+  if (note.length > MAX_REVIEW_NOTE_LENGTH) return { ok: false, reason: 'note_too_long' };
+  if (input.action === 'reject' && note === '') return { ok: false, reason: 'note_required' };
+  return { ok: true, note: note === '' ? null : note };
+}

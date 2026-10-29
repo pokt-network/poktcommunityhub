@@ -38,7 +38,13 @@ describe.skipIf(url === undefined)('reviewSubmission (adversarial)', () => {
   afterAll(() => pool.end());
 
   const review = (submissionId: string, action: 'approve' | 'reject' | 'undo') =>
-    reviewSubmission(pool, { submissionId, action, actorId: admin });
+    // A rejection needs a note (section 13.3); approve and undo take none here.
+    reviewSubmission(pool, {
+      submissionId,
+      action,
+      actorId: admin,
+      note: action === 'reject' ? 'Not enough proof.' : null,
+    });
 
   const succeeded = (results: { ok: boolean }[]) => results.filter((r) => r.ok).length;
 

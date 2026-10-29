@@ -1,6 +1,8 @@
 import {
+  checkReview,
   planReview,
   type ReviewAction,
+  type ReviewerRefusal,
   type ReviewRefusal,
   type RoleChanges,
   type SubmissionStatus,
@@ -12,7 +14,7 @@ import { rollback, withTransaction } from './tx.js';
 
 export type ReviewResult =
   | { ok: true; status: SubmissionStatus; xpDelta: number; roles: RoleChanges }
-  | { ok: false; reason: ReviewRefusal | 'not_found' | 'conflict' };
+  | { ok: false; reason: ReviewRefusal | ReviewerRefusal | 'not_found' | 'conflict' };
 
 /**
  * Approve, reject or undo one submission (flow 8), as one transaction.
@@ -39,6 +41,15 @@ export async function reviewSubmission(
     );
     const userId = owner.rows[0]?.user_id;
     if (userId === undefined) return rollback({ ok: false, reason: 'not_found' });
+
+    // Who may review and what a review must say (section 13.3), before any lock.
+    const reviewer = checkReview({
+      action,
+      note: input.note ?? null,
+      actorId,
+      submitterId: userId,
+    });
+    if (!reviewer.ok) return rollback(reviewer);
 
     await client.query('SELECT 1 FROM users WHERE id = $1 FOR UPDATE', [userId]);
 
@@ -76,7 +87,7 @@ export async function reviewSubmission(
         submissionId,
         plan.from,
         plan.to,
-        reviewed ? (input.note ?? null) : null,
+        reviewed ? reviewer.note : null,
         reviewed ? actorId : null,
         reviewed,
       ],
