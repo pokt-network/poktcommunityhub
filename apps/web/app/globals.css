@@ -188,7 +188,8 @@
   --glow-gold: rgba(255, 197, 71, 0.22);
   --surface-card: rgba(255, 255, 255, 0.85);
   --surface-hero: rgba(255, 255, 255, 0.7);
-  --text-gold: #9a7409;
+  /* Dark gold text on white reads as mustard: in light mode the accent text is blue. */
+  --text-gold: var(--brand-blue);
   --cat-2: #1d8f76;
   --cat-3: #6b6bd6;
   --cat-4: #c98a0b;
