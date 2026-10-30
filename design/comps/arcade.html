@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Comp C: Arcade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <style>
+      /* Brand tokens: as apps/web/app/globals.css (the brandboard). */
+      :root {
+        --brand-blue: #025af2;
+        --brand-gold: #ffc547;
+        --brand-mint: #48e5c2;
+        --brand-coral: #ff5a5f;
+        --brand-lavender: #b8b8ff;
+        --font-primary: 'Rubik', system-ui, sans-serif;
+        --font-numeric: 'JetBrains Mono', monospace;
+        --bg-primary: #12161a;
+        --bg-secondary: #1e2428;
+        --bg-tertiary: #262c31;
+        --text-primary: #e8eaed;
+        --text-secondary: #a4aab0;
+        --text-tertiary: #7d858c;
+        --border-primary: #333a40;
+        --ink: #0b0e10;
+      }
+      [data-theme='light'] {
+        --bg-primary: #f6f6f6;
+        --bg-secondary: #ffffff;
+        --bg-tertiary: #ecedef;
+        --text-primary: #171c1f;
+        --text-secondary: #4a5057;
+        --text-tertiary: #6e767d;
+        --border-primary: #171c1f;
+        --ink: #171c1f;
+      }
+      /* Expressive layer: chunky, offset "game button" depth. */
+      :root {
+        --gradient-warm: linear-gradient(
+          135deg,
+          var(--brand-gold),
+          #ff8a4c 55%,
+          var(--brand-coral)
+        );
+        --cat-social: var(--brand-blue);
+        --cat-onboarding: var(--brand-mint);
+        --cat-community: var(--brand-lavender);
+        --cat-earn: var(--brand-gold);
+        --cat-other: var(--brand-coral);
+        --grid-line: rgba(255, 255, 255, 0.035);
+        --press: 0 5px 0 var(--ink);
+      }
+      [data-theme='light'] {
+        --grid-line: rgba(23, 28, 31, 0.06);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--font-primary);
+        color: var(--text-primary);
+        line-height: 1.55;
+        min-height: 100vh;
+        background:
+          radial-gradient(40% 30% at 15% 0%, rgba(255, 90, 95, 0.14), transparent 70%),
+          radial-gradient(40% 30% at 90% 10%, rgba(2, 90, 242, 0.2), transparent 70%),
+          linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 32px 32px,
+          linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 32px 32px,
+          var(--bg-primary);
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wrap {
+        width: min(100% - 32px, 72rem);
+        margin: 0 auto;
+      }
+      .mono {
+        font-family: var(--font-numeric);
+      }
+
+      /* Header with the player's HUD */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        padding: 14px 0;
+        background: color-mix(in srgb, var(--bg-primary) 85%, transparent);
+        backdrop-filter: blur(10px);
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      .brand svg {
+        width: 32px;
+        height: 32px;
+      }
+      nav {
+        display: flex;
+        gap: 6px;
+        margin-left: 16px;
+      }
+      nav a {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border: 2px solid transparent;
+        border-radius: 12px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 15px;
+      }
+      nav a:hover {
+        color: var(--text-primary);
+        border-color: var(--border-primary);
+      }
+      nav a[aria-current] {
+        background: var(--brand-blue);
+        color: #fff;
+        border-color: var(--ink);
+        box-shadow: 0 3px 0 var(--ink);
+      }
+      nav svg {
+        width: 16px;
+        height: 16px;
+      }
+      .hud {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 8px 6px 6px;
+        border: 2px solid var(--border-primary);
+        border-radius: 14px;
+        background: var(--bg-secondary);
+      }
+      .lvl {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: var(--gradient-warm);
+        color: var(--ink);
+        font-family: var(--font-numeric);
+        font-weight: 800;
+        font-size: 15px;
+        line-height: 1;
+      }
+      .lvl small {
+        font-size: 8px;
+        letter-spacing: 0.1em;
+      }
+      .hud .xpbar {
+        width: 120px;
+      }
+      .hud .xpbar b {
+        display: block;
+        font-size: 12px;
+        font-family: var(--font-numeric);
+        color: var(--text-secondary);
+      }
+      .icon-btn {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border: 2px solid var(--border-primary);
+        border-radius: 12px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        cursor: pointer;
+      }
+      .icon-btn:active {
+        transform: translateY(2px);
+      }
+      .icon-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+      .track {
+        display: block;
+        height: 10px;
+        border-radius: 6px;
+        background: var(--bg-tertiary);
+        border: 2px solid var(--border-primary);
+        overflow: hidden;
+      }
+      .track span {
+        display: block;
+        height: 100%;
+        width: var(--p);
+        background:
+          repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.25) 0 6px, transparent 6px 12px),
+          var(--c, var(--brand-gold));
+        background-size:
+          17px 17px,
+          auto;
+        animation:
+          fill 1.2s ease-out both 0.3s,
+          stripes 1s linear infinite;
+      }
+      @keyframes fill {
+        from {
+          width: 0;
+        }
+      }
+      @keyframes stripes {
+        to {
+          background-position:
+            17px 0,
+            0 0;
+        }
+      }
+
+      /* Hero: quest log with streak and daily goal */
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 20px;
+        margin-top: 24px;
+      }
+      .box {
+        position: relative;
+        padding: 28px;
+        border: 2px solid var(--border-primary);
+        border-radius: 20px;
+        background: var(--bg-secondary);
+        box-shadow: 0 6px 0 var(--ink);
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 2px solid var(--ink);
+        border-radius: 8px;
+        background: var(--brand-mint);
+        color: var(--ink);
+        font-family: var(--font-numeric);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .tag svg {
+        width: 14px;
+        height: 14px;
+      }
+      h1 {
+        margin: 14px 0 10px;
+        font-size: clamp(2.2rem, 4.6vw, 3.4rem);
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--brand-gold);
+        text-shadow: 3px 3px 0 var(--brand-coral);
+      }
+      [data-theme='light'] h1 em {
+        color: #c98a0b;
+        text-shadow: 3px 3px 0 #ffd9a0;
+      }
+      .lede {
+        color: var(--text-secondary);
+        font-size: 17px;
+        max-width: 30rem;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 20px;
+        padding: 12px 22px;
+        border: 2px solid var(--ink);
+        border-radius: 14px;
+        background: var(--gradient-warm);
+        color: var(--ink);
+        font: inherit;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        box-shadow: var(--press);
+        cursor: pointer;
+        transition:
+          transform 0.08s,
+          box-shadow 0.08s;
+      }
+      .cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 0 var(--ink);
+      }
+      .cta:active {
+        transform: translateY(5px);
+        box-shadow: 0 0 0 var(--ink);
+      }
+      .cta svg {
+        width: 18px;
+        height: 18px;
+      }
+      .streak {
+        display: grid;
+        gap: 14px;
+      }
+      .streak h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 18px;
+        text-transform: uppercase;
+        font-weight: 800;
+      }
+      .flame {
+        color: var(--brand-coral);
+        animation: flicker 1.4s ease-in-out infinite;
+      }
+      @keyframes flicker {
+        50% {
+          transform: scale(1.15) rotate(-6deg);
+        }
+      }
+      .days {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .days span {
+        display: grid;
+        place-items: center;
+        height: 40px;
+        border: 2px solid var(--border-primary);
+        border-radius: 10px;
+        font-family: var(--font-numeric);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-tertiary);
+      }
+      .days span.on {
+        background: var(--brand-coral);
+        border-color: var(--ink);
+        color: var(--ink);
+        box-shadow: 0 3px 0 var(--ink);
+      }
+      .days span.today {
+        background: var(--brand-gold);
+        border-color: var(--ink);
+        color: var(--ink);
+        animation: pulse 1.6s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+      .goal {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 14px;
+        color: var(--text-secondary);
+      }
+      .goal b {
+        color: var(--text-primary);
+        font-family: var(--font-numeric);
+      }
+
+      /* Category tabs */
+      .cats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 32px 0 18px;
+      }
+      .cat {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border: 2px solid var(--border-primary);
+        border-radius: 12px;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        font: inherit;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.1s;
+      }
+      .cat svg {
+        width: 16px;
+        height: 16px;
+        color: var(--c);
+      }
+      .cat:hover {
+        transform: translateY(-2px);
+      }
+      .cat[aria-pressed='true'] {
+        background: var(--c);
+        color: var(--ink);
+        border-color: var(--ink);
+        box-shadow: 0 3px 0 var(--ink);
+      }
+      .cat[aria-pressed='true'] svg {
+        color: var(--ink);
+      }
+
+      /* Quest cards */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+        gap: 18px;
+        list-style: none;
+      }
+      .card {
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+        border: 2px solid var(--border-primary);
+        border-radius: 18px;
+        background: var(--bg-secondary);
+        box-shadow: 0 6px 0 color-mix(in srgb, var(--c) 70%, var(--ink));
+        transition:
+          transform 0.12s,
+          box-shadow 0.12s;
+        animation: drop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+      .card:hover {
+        transform: translateY(-4px) rotate(-0.4deg);
+        box-shadow: 0 10px 0 color-mix(in srgb, var(--c) 70%, var(--ink));
+      }
+      @keyframes drop {
+        from {
+          opacity: 0;
+          transform: translateY(-16px) scale(0.97);
+        }
+      }
+      .grid li:nth-child(2) .card {
+        animation-delay: 0.06s;
+      }
+      .grid li:nth-child(3) .card {
+        animation-delay: 0.12s;
+      }
+      .grid li:nth-child(4) .card {
+        animation-delay: 0.18s;
+      }
+      .grid li:nth-child(5) .card {
+        animation-delay: 0.24s;
+      }
+      .grid li:nth-child(6) .card {
+        animation-delay: 0.3s;
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .tile {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 50px;
+        height: 50px;
+        border: 2px solid var(--ink);
+        border-radius: 14px;
+        background: var(--c);
+        color: var(--ink);
+        box-shadow: 0 3px 0 var(--ink);
+      }
+      .tile svg {
+        width: 24px;
+        height: 24px;
+      }
+      .kicker {
+        font-family: var(--font-numeric);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--c);
+      }
+      [data-theme='light'] .kicker {
+        color: color-mix(in srgb, var(--c) 65%, #000);
+      }
+      .card h3 {
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1.25;
+      }
+      .hex {
+        margin-left: auto;
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 60px;
+        height: 66px;
+        clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+        background: var(--gradient-warm);
+        color: var(--ink);
+        font-family: var(--font-numeric);
+        font-weight: 800;
+        line-height: 1;
+        text-align: center;
+        transition: transform 0.2s;
+      }
+      .card:hover .hex {
+        transform: rotate(12deg) scale(1.08);
+      }
+      .hex b {
+        display: block;
+        font-size: 17px;
+      }
+      .hex small {
+        font-size: 9px;
+        letter-spacing: 0.1em;
+      }
+      .card p {
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+      .diff {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-tertiary);
+        font-family: var(--font-numeric);
+      }
+      .diff i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+      }
+      .diff i.on {
+        background: var(--brand-gold);
+        border-color: var(--ink);
+      }
+      .foot {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .foot .track {
+        flex: 1;
+      }
+      .go {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border: 2px solid var(--ink);
+        border-radius: 10px;
+        background: var(--brand-blue);
+        color: #fff;
+        font: inherit;
+        font-weight: 800;
+        font-size: 13px;
+        text-transform: uppercase;
+        box-shadow: 0 3px 0 var(--ink);
+        cursor: pointer;
+      }
+      .go:active {
+        transform: translateY(3px);
+        box-shadow: none;
+      }
+      .go svg {
+        width: 15px;
+        height: 15px;
+      }
+      .go.done {
+        background: var(--brand-mint);
+        color: var(--ink);
+      }
+      .go.wait {
+        background: var(--brand-gold);
+        color: var(--ink);
+      }
+
+      /* Podium */
+      .board {
+        margin: 40px 0 72px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+        gap: 20px;
+      }
+      .board h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 18px;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+      }
+      .podium {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        align-items: end;
+        gap: 10px;
+        text-align: center;
+      }
+      .step {
+        display: grid;
+        gap: 8px;
+        justify-items: center;
+      }
+      .step .av {
+        display: grid;
+        place-items: center;
+        width: 52px;
+        height: 52px;
+        border: 2px solid var(--ink);
+        border-radius: 16px;
+        font-weight: 800;
+        color: #fff;
+        box-shadow: 0 3px 0 var(--ink);
+      }
+      .step .plinth {
+        width: 100%;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--ink);
+        border-radius: 12px 12px 4px 4px;
+        font-family: var(--font-numeric);
+        font-weight: 800;
+        font-size: 24px;
+        color: var(--ink);
+        animation: grow 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both 0.3s;
+        transform-origin: bottom;
+      }
+      @keyframes grow {
+        from {
+          transform: scaleY(0);
+        }
+      }
+      .p1 .plinth {
+        height: 120px;
+        background: var(--gradient-warm);
+      }
+      .p2 .plinth {
+        height: 88px;
+        background: #c9ced6;
+      }
+      .p3 .plinth {
+        height: 64px;
+        background: #d08a5a;
+      }
+      .step small {
+        font-family: var(--font-numeric);
+        color: var(--text-secondary);
+      }
+      .crown {
+        color: var(--brand-gold);
+        animation: pulse 1.6s ease-in-out infinite;
+      }
+      .unlock {
+        display: grid;
+        gap: 14px;
+      }
+      .badges {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .badges span {
+        display: grid;
+        place-items: center;
+        height: 64px;
+        border: 2px solid var(--border-primary);
+        border-radius: 14px;
+        color: var(--text-tertiary);
+      }
+      .badges span.got {
+        background: var(--c);
+        border-color: var(--ink);
+        color: var(--ink);
+        box-shadow: 0 3px 0 var(--ink);
+      }
+      .badges svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      /* Toast and confetti */
+      .toast {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border: 2px solid var(--ink);
+        border-radius: 16px;
+        background: var(--brand-mint);
+        color: var(--ink);
+        font-weight: 700;
+        box-shadow: var(--press);
+        transform: translateY(160%);
+        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .toast.show {
+        transform: none;
+      }
+      .toast svg {
+        width: 22px;
+        height: 22px;
+      }
+      .bit {
+        position: fixed;
+        z-index: 40;
+        width: 9px;
+        height: 13px;
+        border-radius: 2px;
+        pointer-events: none;
+      }
+
+      @media (max-width: 900px) {
+        .hero,
+        .board {
+          grid-template-columns: 1fr;
+        }
+        nav a span,
+        .hud .xpbar {
+          display: none;
+        }
+      }
+      @media (max-width: 560px) {
+        .brand span {
+          display: none;
+        }
+        nav {
+          margin-left: 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+      .comp-tag {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        z-index: 20;
+        padding: 6px 12px;
+        border: 2px solid var(--border-primary);
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        font-size: 12px;
+      }
+      .comp-tag a {
+        color: var(--brand-blue);
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap bar">
+        <a class="brand" href="#"
+          ><svg viewBox="0 0 32 32" aria-hidden="true">
+            <rect
+              x="1"
+              y="1"
+              width="30"
+              height="30"
+              rx="9"
+              fill="#025af2"
+              stroke="#0b0e10"
+              stroke-width="2"
+            />
+            <path
+              d="M11 23V9h6.2a4.6 4.6 0 0 1 0 9.2H14"
+              fill="none"
+              stroke="#fff"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            /></svg
+          ><span>Community Hub</span></a
+        >
+        <nav aria-label="Main">
+          <a href="#" aria-current="page"><i data-lucide="swords"></i><span>Quests</span></a>
+          <a href="#"><i data-lucide="trophy"></i><span>Leaderboard</span></a>
+          <a href="#"><i data-lucide="gift"></i><span>Rewards</span></a>
+        </nav>
+        <div class="hud" aria-label="Level 7, 1,980 of 2,500 XP">
+          <span class="lvl"
+            ><span><small>LVL</small><br />7</span></span
+          >
+          <span class="xpbar"
+            ><b>1,980 / 2,500 XP</b><span class="track"><span style="--p: 79%"></span></span
+          ></span>
+        </div>
+        <button class="icon-btn" id="theme" aria-label="Switch to light mode">
+          <i data-lucide="sun"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="hero">
+        <div class="box">
+          <span class="tag"><i data-lucide="zap"></i>Season 1 · week 3</span>
+          <h1>Pick a quest.<br /><em>Level up.</em></h1>
+          <p class="lede">
+            Every quest you finish earns XP, climbs the board, and unlocks new ranks and Discord
+            roles.
+          </p>
+          <button class="cta" id="play"><i data-lucide="gamepad-2"></i>Start a quest</button>
+        </div>
+        <div class="box streak">
+          <h2><i data-lucide="flame" class="flame"></i>5-day streak</h2>
+          <div class="days">
+            <span class="on">M</span><span class="on">T</span><span class="on">W</span
+            ><span class="on">T</span><span class="today">F</span><span>S</span><span>S</span>
+          </div>
+          <div class="goal"><span>Weekly goal</span><b>3 / 4 quests</b></div>
+          <span class="track" style="--c: var(--brand-mint)"><span style="--p: 75%"></span></span>
+        </div>
+      </section>
+
+      <div class="cats" role="group" aria-label="Category">
+        <button class="cat" aria-pressed="true" style="--c: var(--brand-gold)">
+          <i data-lucide="layout-grid"></i>All
+        </button>
+        <button class="cat" aria-pressed="false" style="--c: var(--cat-social)">
+          <i data-lucide="megaphone"></i>Social
+        </button>
+        <button class="cat" aria-pressed="false" style="--c: var(--cat-onboarding)">
+          <i data-lucide="compass"></i>Onboarding
+        </button>
+        <button class="cat" aria-pressed="false" style="--c: var(--cat-community)">
+          <i data-lucide="users"></i>Community
+        </button>
+        <button class="cat" aria-pressed="false" style="--c: var(--cat-earn)">
+          <i data-lucide="coins"></i>Earn
+        </button>
+        <button class="cat" aria-pressed="false" style="--c: var(--cat-other)">
+          <i data-lucide="shapes"></i>Other
+        </button>
+      </div>
+
+      <ul class="grid">
+        <li>
+          <div class="card" style="--c: var(--cat-earn)">
+            <div class="head">
+              <span class="tile"><i data-lucide="video"></i></span>
+              <div>
+                <div class="kicker">Earn</div>
+                <h3>Record an explainer clip</h3>
+              </div>
+              <span class="hex"
+                ><span><b>200</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Record a 60–90 second video explaining how Pocket serves data to AI agents.</p>
+            <span class="diff"
+              >Difficulty <i class="on"></i><i class="on"></i><i class="on"></i><i></i
+            ></span>
+            <div class="foot">
+              <span class="track" style="--c: var(--cat-earn)"><span style="--p: 0%"></span></span
+              ><button class="go"><i data-lucide="play"></i>Start</button>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="card" style="--c: var(--cat-other)">
+            <div class="head">
+              <span class="tile"><i data-lucide="bug"></i></span>
+              <div>
+                <div class="kicker">Other</div>
+                <h3>Report a docs bug</h3>
+              </div>
+              <span class="hex"
+                ><span><b>80</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Explore the developer docs and report anything broken, unclear or out of date.</p>
+            <span class="diff">Difficulty <i class="on"></i><i></i><i></i><i></i></span>
+            <div class="foot">
+              <span class="track" style="--c: var(--brand-gold)"
+                ><span style="--p: 60%"></span></span
+              ><button class="go wait"><i data-lucide="hourglass"></i>In review</button>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="card" style="--c: var(--cat-community)">
+            <div class="head">
+              <span class="tile"><i data-lucide="users"></i></span>
+              <div>
+                <div class="kicker">Community</div>
+                <h3>Local meetup recap</h3>
+              </div>
+              <span class="hex"
+                ><span><b>300</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Host or attend a meetup and share a short recap with photos.</p>
+            <span class="diff"
+              >Difficulty <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i
+            ></span>
+            <div class="foot">
+              <span class="track" style="--c: var(--cat-community)"
+                ><span style="--p: 0%"></span></span
+              ><button class="go"><i data-lucide="play"></i>Start</button>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="card" style="--c: var(--cat-onboarding)">
+            <div class="head">
+              <span class="tile"><i data-lucide="languages"></i></span>
+              <div>
+                <div class="kicker">Onboarding</div>
+                <h3>Translate a docs snippet</h3>
+              </div>
+              <span class="hex"
+                ><span><b>120</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Translate a short section of the Pocket docs into your language.</p>
+            <span class="diff">Difficulty <i class="on"></i><i class="on"></i><i></i><i></i></span>
+            <div class="foot">
+              <span class="track" style="--c: var(--brand-mint)"
+                ><span style="--p: 100%"></span></span
+              ><button class="go done"><i data-lucide="check"></i>Cleared</button>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="card" style="--c: var(--cat-social)">
+            <div class="head">
+              <span class="tile"><i data-lucide="at-sign"></i></span>
+              <div>
+                <div class="kicker">Social</div>
+                <h3>Post a social thread</h3>
+              </div>
+              <span class="hex"
+                ><span><b>75</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Post a thread on X explaining what Pocket does for service developers.</p>
+            <span class="diff">Difficulty <i class="on"></i><i></i><i></i><i></i></span>
+            <div class="foot">
+              <span class="track" style="--c: var(--cat-social)"><span style="--p: 0%"></span></span
+              ><button class="go"><i data-lucide="play"></i>Start</button>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="card" style="--c: var(--cat-earn)">
+            <div class="head">
+              <span class="tile"><i data-lucide="graduation-cap"></i></span>
+              <div>
+                <div class="kicker">Earn</div>
+                <h3>Create a tutorial</h3>
+              </div>
+              <span class="hex"
+                ><span><b>150</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Write a short tutorial that helps a new builder ship their first service.</p>
+            <span class="diff"
+              >Difficulty <i class="on"></i><i class="on"></i><i class="on"></i><i></i
+            ></span>
+            <div class="foot">
+              <span class="track" style="--c: var(--cat-earn)"><span style="--p: 0%"></span></span
+              ><button class="go"><i data-lucide="play"></i>Start</button>
+            </div>
+          </div>
+        </li>
+      </ul>
+
+      <div class="board">
+        <section class="box">
+          <h2><i data-lucide="crown" class="crown"></i>This month's podium</h2>
+          <div class="podium">
+            <div class="step p2">
+              <span class="av" style="background: #2bb89a">K</span><b>Kwame</b
+              ><small>9,320 XP</small><span class="plinth">2</span>
+            </div>
+            <div class="step p1">
+              <span class="av" style="background: #025af2">A</span><b>Ana</b><small>12,450 XP</small
+              ><span class="plinth">1</span>
+            </div>
+            <div class="step p3">
+              <span class="av" style="background: #b8b8ff; color: #171c1f">M</span><b>Mei</b
+              ><small>7,650 XP</small><span class="plinth">3</span>
+            </div>
+          </div>
+        </section>
+        <section class="box unlock">
+          <h2><i data-lucide="lock-open"></i>Badges</h2>
+          <div class="badges">
+            <span class="got" style="--c: var(--brand-gold)" title="First quest"
+              ><i data-lucide="star"></i
+            ></span>
+            <span class="got" style="--c: var(--brand-mint)" title="Helper"
+              ><i data-lucide="heart-handshake"></i
+            ></span>
+            <span class="got" style="--c: var(--brand-lavender)" title="Navigator"
+              ><i data-lucide="compass"></i
+            ></span>
+            <span title="Locked"><i data-lucide="lock"></i></span>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 14px">
+            520 XP to <b style="color: var(--text-primary)">Trailblazer</b> and its Discord role.
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <div class="toast" id="toast" role="status">
+      <i data-lucide="party-popper"></i><span>Quest started! +200 XP on approval</span>
+    </div>
+    <p class="comp-tag">
+      Comp C: Arcade · <a href="warm-glow.html">see Warm glow</a> · press Start for confetti
+    </p>
+
+    <script>
+      lucide.createIcons();
+      const btn = document.getElementById('theme');
+      const apply = (t) => {
+        document.documentElement.dataset.theme = t;
+        btn.setAttribute(
+          'aria-label',
+          t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+        );
+        btn.innerHTML = '<i data-lucide="' + (t === 'dark' ? 'sun' : 'moon') + '"></i>';
+        lucide.createIcons();
+      };
+      try {
+        const saved = localStorage.getItem('comp-theme');
+        if (saved) apply(saved);
+      } catch {}
+      btn.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        apply(next);
+        try {
+          localStorage.setItem('comp-theme', next);
+        } catch {}
+      });
+
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const colors = ['#025af2', '#ffc547', '#48e5c2', '#ff5a5f', '#b8b8ff'];
+      function burst(x, y) {
+        if (still) return;
+        for (let i = 0; i < 40; i++) {
+          const b = document.createElement('span');
+          b.className = 'bit';
+          b.style.background = colors[i % colors.length];
+          b.style.left = x + 'px';
+          b.style.top = y + 'px';
+          document.body.append(b);
+          const a = Math.random() * Math.PI * 2,
+            v = 120 + Math.random() * 200;
+          b.animate(
+            [
+              { transform: 'translate(0,0) rotate(0)', opacity: 1 },
+              {
+                transform: `translate(${Math.cos(a) * v}px, ${Math.sin(a) * v + 220}px) rotate(${Math.random() * 720}deg)`,
+                opacity: 0,
+              },
+            ],
+            { duration: 1100 + Math.random() * 500, easing: 'cubic-bezier(.2,.6,.4,1)' },
+          ).onfinish = () => b.remove();
+        }
+      }
+      const toast = document.getElementById('toast');
+      document.querySelectorAll('.go:not(.done):not(.wait), #play').forEach((el) =>
+        el.addEventListener('click', (e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          burst(r.left + r.width / 2, r.top + r.height / 2);
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 2600);
+        }),
+      );
+    </script>
+  </body>
+</html>
