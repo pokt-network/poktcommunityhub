@@ -1,11 +1,13 @@
 import { questPhase, type QuestPhase } from '@community/core';
-import { questDetail } from '@community/store';
+import { listCategories, questDetail } from '@community/store';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { CSSProperties } from 'react';
 import Markdown from 'react-markdown';
 
 import { currentViewer } from '@/lib/authz';
+import { categoryColor } from '@/lib/category-color';
 import { db } from '@/lib/db';
 import { formatDate, formatXp, STATUS_LABELS } from '@/lib/format';
 import { isUuid } from '@/lib/ids';
@@ -52,7 +54,10 @@ export default async function QuestPage({
   params: Params;
   searchParams: Search;
 }) {
-  const { viewer, quest } = await load((await params).id);
+  const [{ viewer, quest }, categories] = await Promise.all([
+    load((await params).id),
+    listCategories(db()),
+  ]);
   const { submitted } = await searchParams;
   const phase = questPhase(quest, new Date());
   const mine = quest.submission;
@@ -64,17 +69,23 @@ export default async function QuestPage({
         <Link href="/">← All quests</Link>
       </p>
 
-      <div className={styles.heading}>
-        <div className={styles.row}>
-          <QuestIcon icon={quest.icon} />
+      <div
+        className={styles.questHead}
+        style={{ '--c': categoryColor(categories, quest.category?.id) } as CSSProperties}
+      >
+        <QuestIcon icon={quest.icon} />
+        <div className={styles.cardHeading}>
+          <span className={styles.kicker}>{quest.category?.name ?? 'Quest'}</span>
           <h1 className={styles.title}>{quest.title}</h1>
+          <div className={styles.meta}>
+            {quest.rewardRole !== null && <span>Reward role: {quest.rewardRole.name}</span>}
+            {quest.endsAt !== null && <span>Ends {formatDate(quest.endsAt)}</span>}
+          </div>
         </div>
-        <div className={styles.meta}>
-          <span className={styles.xp}>{formatXp(quest.xpReward)}</span>
-          {quest.category !== null && <span>{quest.category.name}</span>}
-          {quest.rewardRole !== null && <span>Reward role: {quest.rewardRole.name}</span>}
-          {quest.endsAt !== null && <span>Ends {formatDate(quest.endsAt)}</span>}
-        </div>
+        <span className={styles.coin} aria-label={formatXp(quest.xpReward)}>
+          <b aria-hidden>{quest.xpReward.toLocaleString('en-US')}</b>
+          <small aria-hidden>XP</small>
+        </span>
       </div>
 
       {quest.descriptionMd.trim() !== '' && (
@@ -146,7 +157,7 @@ export default async function QuestPage({
           <p className={styles.muted}>{CLOSED_REASONS[phase](quest)}</p>
         ) : viewer === null ? (
           <form action={signInWithDiscord}>
-            <button className={styles.button} type="submit">
+            <button className={styles.gold} type="submit">
               Sign in with Discord to submit
             </button>
           </form>

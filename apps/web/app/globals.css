@@ -142,6 +142,58 @@
   --state-unknown: #5c646b;
 }
 
+/*
+ * Expressive layer: the hub's own, NOT the portal's. Built only from the brand
+ * tokens above (gold stays gold: no orange, no peach), it adds the gradients,
+ * glows, translucent surfaces and category colours of the "warm glow" design
+ * (design/comps/warm-glow.html). Pocket blue leads; gold is the accent.
+ */
+:root {
+  --gold-light: #ffd66e;
+  --gradient-gold: linear-gradient(
+    160deg,
+    var(--gold-light) 0%,
+    var(--brand-gold) 45%,
+    var(--brand-gold-hover) 100%
+  );
+  --gradient-blue: linear-gradient(135deg, var(--brand-blue) 0%, #5a9eff 100%);
+  --on-gold: var(--brand-dark);
+  --shadow-gold: 0 6px 22px rgba(255, 197, 71, 0.35);
+  --shadow-blue: 0 4px 18px rgba(2, 90, 242, 0.35);
+
+  --glow-blue: rgba(2, 90, 242, 0.26);
+  --glow-blue-soft: rgba(90, 158, 255, 0.14);
+  --glow-gold: rgba(255, 197, 71, 0.09);
+  --surface-card: rgba(30, 36, 40, 0.72);
+  --surface-hero: rgba(30, 36, 40, 0.6);
+  --text-gold: var(--brand-gold);
+
+  /* Quest categories take these in board order; there are five, so they repeat. */
+  --cat-1: var(--brand-blue);
+  --cat-2: var(--brand-mint);
+  --cat-3: var(--brand-lavender);
+  --cat-4: var(--brand-gold);
+  --cat-5: var(--brand-coral);
+  --cat-none: var(--series-other);
+
+  --radius-card: 18px;
+  --radius-hero: 24px;
+  --content-width: 72rem;
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+[data-theme='light'] {
+  --glow-blue: rgba(2, 90, 242, 0.12);
+  --glow-blue-soft: rgba(90, 158, 255, 0.14);
+  --glow-gold: rgba(255, 197, 71, 0.22);
+  --surface-card: rgba(255, 255, 255, 0.85);
+  --surface-hero: rgba(255, 255, 255, 0.7);
+  --text-gold: #9a7409;
+  --cat-2: #1d8f76;
+  --cat-3: #6b6bd6;
+  --cat-4: #c98a0b;
+}
+
 *,
 *::before,
 *::after {
@@ -154,8 +206,18 @@ html {
   color-scheme: dark;
 }
 
+[data-theme='light'] {
+  color-scheme: light;
+}
+
 body {
-  background: var(--bg-primary);
+  min-height: 100vh;
+  background:
+    radial-gradient(55% 45% at 85% 0%, var(--glow-blue), transparent 70%),
+    radial-gradient(40% 35% at 0% 30%, var(--glow-blue-soft), transparent 70%),
+    radial-gradient(35% 30% at 15% 0%, var(--glow-gold), transparent 70%),
+    radial-gradient(50% 45% at 60% 100%, var(--glow-blue), transparent 70%), var(--bg-primary);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-primary);
   font-size: var(--text-base);
@@ -209,4 +271,14 @@ a {
 
 .skip-link:focus {
   top: var(--space-4);
+}
+
+/* Movement is decoration here, never information: switched off on request. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
