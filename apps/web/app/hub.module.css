@@ -305,101 +305,10 @@
   font-family: var(--font-numeric);
 }
 
-.heroArt {
-  position: relative;
-  height: 240px;
-}
-
-.coinBig,
-.coinSmall {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--gradient-gold);
-  box-shadow:
-    inset 0 -6px 0 rgba(0, 0, 0, 0.15),
-    0 12px 30px rgba(255, 197, 71, 0.4);
-  color: var(--on-gold);
-  font-family: var(--font-numeric);
-  font-weight: var(--weight-bold);
-}
-
-.coinBig {
-  left: 34%;
-  top: 18%;
-  width: 132px;
-  height: 132px;
-  font-size: var(--text-3xl);
-  animation: bob 5s ease-in-out infinite;
-}
-
-.coinSmall {
-  left: 12%;
-  top: 58%;
-  width: 64px;
-  height: 64px;
-  font-size: var(--text-sm);
-  animation: bob 6s ease-in-out -2s infinite;
-}
-
-/* The Pocket mark is brand blue itself, so it floats bare, with a blue glow. */
-.heroMark {
-  position: absolute;
-  right: 8%;
-  top: 6%;
-  filter: drop-shadow(0 6px 16px rgba(2, 90, 242, 0.45));
-  animation: bob 4.5s ease-in-out -1s infinite;
-}
-
-.spark1,
-.spark2 {
-  position: absolute;
-  color: var(--brand-gold);
-  animation: twinkle 2.8s ease-in-out infinite;
-}
-
-.spark1 {
-  left: 8%;
-  top: 10%;
-}
-
-.spark2 {
-  left: 72%;
-  top: 70%;
-  animation-delay: 1.2s;
-}
-
-@keyframes bob {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0);
-  }
-  50% {
-    transform: translateY(-12px) rotate(3deg);
-  }
-}
-
-@keyframes twinkle {
-  0%,
-  100% {
-    opacity: 0.25;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-}
-
 @media (max-width: 860px) {
   .hero {
     grid-template-columns: minmax(0, 1fr);
     padding: var(--space-8) var(--space-6);
-  }
-
-  .heroArt {
-    height: 180px;
   }
 }
 
