@@ -1,6 +1,6 @@
 # POKT Community Hub: Build Brief (rebuild)
 
-Status: **Phases 1 and 2 passed** (Jinx, 2026-10-28); **phases 3 and 4 deployed**, awaiting review; **phase 5 deployed**, awaiting review (decisions in section 13); **phase 6 in progress** (decisions in section 14). Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules confirmed (section 10).
+Status: **Phases 1 and 2 passed** (Jinx, 2026-10-28); **phases 3 and 4 deployed**, awaiting review; **phase 5 deployed**, awaiting review (decisions in section 13); **phase 6 deployed**, awaiting review (decisions in section 14). Decisions answered 2026-10-26 (section 9); backup destination still open; phase 2 rules confirmed (section 10).
 
 This brief is the authority for the rebuild. The existing app (tag it `mvp-reference` before anything moves) is treated as an aspirational MVP: it settles *what* the hub does, not *how*. No code is carried over by default; individual pieces may be lifted only when they are read, tested and match these conventions.
 
