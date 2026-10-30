@@ -67,35 +67,39 @@ export default async function LeaderboardPage({
       {rows.length === 0 ? (
         <p className={styles.empty}>Nobody has earned XP in this period yet.</p>
       ) : (
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th className={styles.num} scope="col">
-                Rank
-              </th>
-              <th scope="col">Ambassador</th>
-              <th className={styles.num} scope="col">
-                XP
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...rows, ...(mine !== null && !mineShown ? [mine] : [])].map((r) => (
-              <tr key={r.userId} data-me={r.userId === viewer?.id}>
-                <td className={styles.num}>{r.rank}</td>
-                <td>
-                  <span className={styles.person}>
-                    {r.avatarUrl !== null && (
-                      <img src={r.avatarUrl} alt="" width={24} height={24} />
-                    )}
-                    {viewer === null ? r.name : <Link href={`/users/${r.userId}`}>{r.name}</Link>}
-                  </span>
-                </td>
-                <td className={styles.num}>{r.xp.toLocaleString('en-US')}</td>
+        <div className={`${styles.board} ${styles.tableWrap}`}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th scope="col">Rank</th>
+                <th scope="col">Ambassador</th>
+                <th className={styles.num} scope="col">
+                  XP
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {[...rows, ...(mine !== null && !mineShown ? [mine] : [])].map((r) => (
+                <tr key={r.userId} data-me={r.userId === viewer?.id}>
+                  <td>
+                    <span className={styles.medal} data-place={r.rank <= 3 ? r.rank : undefined}>
+                      {r.rank}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={styles.person}>
+                      {r.avatarUrl !== null && (
+                        <img src={r.avatarUrl} alt="" width={32} height={32} />
+                      )}
+                      {viewer === null ? r.name : <Link href={`/users/${r.userId}`}>{r.name}</Link>}
+                    </span>
+                  </td>
+                  <td className={`${styles.num} ${styles.xp}`}>{r.xp.toLocaleString('en-US')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </main>
   );

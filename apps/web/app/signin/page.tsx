@@ -35,7 +35,7 @@ export default async function SignInPage({
   return (
     <main className={styles.main}>
       <div className={styles.card}>
-        <img src="/pokt-mark.svg" alt="" width={56} height={56} />
+        <img className={styles.mark} src="/pokt-mark.svg" alt="" width={64} height={64} />
         <h1 className={styles.title}>Sign in</h1>
         <p className={styles.lede}>
           The Community Hub uses your Discord account. You need to be a member of the POKT Discord
