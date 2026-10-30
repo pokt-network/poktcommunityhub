@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { currentViewer } from '@/lib/authz';
 import { db } from '@/lib/db';
 
+import { Avatar } from '../avatar';
 import styles from '../hub.module.css';
 
 export const metadata: Metadata = { title: 'Leaderboard' };
@@ -88,9 +89,7 @@ export default async function LeaderboardPage({
                   </td>
                   <td>
                     <span className={styles.person}>
-                      {r.avatarUrl !== null && (
-                        <img src={r.avatarUrl} alt="" width={32} height={32} />
-                      )}
+                      <Avatar url={r.avatarUrl} name={r.name} size={36} />
                       {viewer === null ? r.name : <Link href={`/users/${r.userId}`}>{r.name}</Link>}
                     </span>
                   </td>

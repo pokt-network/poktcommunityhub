@@ -111,11 +111,14 @@
   font-weight: var(--weight-medium);
 }
 
-.me img {
+.avatarImg {
+  flex: none;
   border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
 }
 
 .initial {
+  flex: none;
   display: inline-grid;
   place-items: center;
   width: 30px;
@@ -964,10 +967,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-}
-
-.person img {
-  border-radius: var(--radius-full);
 }
 
 .tabs {

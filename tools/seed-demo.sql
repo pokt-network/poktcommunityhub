@@ -65,10 +65,11 @@ SELECT q.title, q.body, q.xp, q.icon, c.id, q.links, q.hint, q.starts, q.ends, r
   LEFT JOIN quest_categories c ON c.name = q.cat
   LEFT JOIN server_roles r ON r.name = q.role;
 
-INSERT INTO users (discord_id, name, role) VALUES
-  ('1000000000000000001', 'Ada Relay', 'ambassador'),
-  ('1000000000000000002', 'Grace Node', 'ambassador'),
-  ('1000000000000000003', 'Linus Gateway', 'ambassador');
+-- Discord's default avatars, varied so the leaderboard and profiles show faces.
+INSERT INTO users (discord_id, name, role, avatar_url) VALUES
+  ('1000000000000000001', 'Ada Relay', 'ambassador', 'https://cdn.discordapp.com/embed/avatars/0.png'),
+  ('1000000000000000002', 'Grace Node', 'ambassador', 'https://cdn.discordapp.com/embed/avatars/2.png'),
+  ('1000000000000000003', 'Linus Gateway', 'ambassador', 'https://cdn.discordapp.com/embed/avatars/3.png');
 
 -- Approved submissions, each with its ledger award, spread over this month and last.
 WITH awards(name, quest, ago) AS (VALUES

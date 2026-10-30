@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { currentViewer } from '@/lib/authz';
 import type { Theme } from '@/lib/theme';
 
+import { Avatar } from './avatar';
 import styles from './hub.module.css';
 import { NavPills } from './nav-pills';
 import { ThemeToggle } from './theme-toggle';
@@ -29,14 +30,7 @@ export async function SiteHeader({ theme }: { theme: Theme }) {
             </Link>
           ) : (
             <Link className={styles.me} href="/me" aria-label={`Your profile (${viewer.name})`}>
-              {viewer.avatarUrl !== null ? (
-                <img src={viewer.avatarUrl} alt="" width={30} height={30} />
-              ) : (
-                // The name is hidden on narrow screens, so the link needs something to show.
-                <span className={styles.initial} aria-hidden>
-                  {Array.from(viewer.name)[0]?.toUpperCase()}
-                </span>
-              )}
+              <Avatar url={viewer.avatarUrl} name={viewer.name} size={30} />
               <span>{viewer.name}</span>
             </Link>
           )}
