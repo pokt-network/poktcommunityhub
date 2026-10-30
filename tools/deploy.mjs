@@ -20,8 +20,8 @@
  * Build, then migrate, then up: the apps must never meet a schema they were not
  * written for.
  *
- * Rollback is a retag of the previous commit's images, printed at the end. It
- * does not undo migrations.
+ * Rollback is a retag of the previous commit's images (a service new in this
+ * release is stopped instead), printed at the end. It does not undo migrations.
  *
  * Usage:
  *   pnpm deploy:host <ssh-host> [--dir /opt/pocket/services/community] [--yes] [--no-cache]
@@ -31,6 +31,7 @@ import { readFileSync } from 'node:fs';
 
 import { parseDeployArgs } from './deploy-args.mjs';
 import { APP_SERVICES, BUILT_SERVICES } from './images.mjs';
+import { rollbackCommand } from './rollback.mjs';
 
 const parsed = parseDeployArgs(process.argv.slice(2));
 if (parsed.error !== undefined) {
@@ -293,12 +294,24 @@ try {
 
 console.log(`\nOK: ${host} is running ${short} (previously ${previous}).`);
 if (previous !== 'none') {
-  const prevShort = previous.slice(0, 12);
-  const retag = APP_SERVICES.map(
-    (service) => `docker tag ${image(service, prevShort)} ${image(service, 'latest')}`,
-  ).join(' && ');
+  const previousShort = previous.slice(0, 12);
+  const previousServices = APP_SERVICES.filter(
+    (service) =>
+      remote(
+        `docker image inspect ${image(service, previousShort)} >/dev/null 2>&1 && echo yes || echo no`,
+      ).trim() === 'yes',
+  );
+  const line = rollbackCommand({
+    host,
+    dir: DIR,
+    compose: COMPOSE,
+    image,
+    previousShort,
+    services: APP_SERVICES,
+    previousServices,
+  });
   console.log(
-    'Rollback (retags the previous images; does NOT undo migrations):\n' +
-      `  ssh ${host} "cd ${DIR} && ${retag} && ${COMPOSE} up -d --no-build && cp DEPLOYED_COMMIT.prev DEPLOYED_COMMIT"`,
+    'Rollback (retags the previous images, stops services new in this release; does NOT undo migrations):\n' +
+      `  ${line}`,
   );
 }
