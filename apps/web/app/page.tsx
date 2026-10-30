@@ -9,6 +9,7 @@ import { db } from '@/lib/db';
 import { formatDate, STATUS_LABELS } from '@/lib/format';
 import { isUuid } from '@/lib/ids';
 
+import { HeroArt } from './hero-art';
 import styles from './hub.module.css';
 import { QuestIcon } from './quest-icon';
 
@@ -95,13 +96,7 @@ export default async function QuestBoard({ searchParams }: { searchParams: Searc
             )}
           </div>
         </div>
-        <div className={styles.heroArt} aria-hidden>
-          <span className={styles.coinBig}>XP</span>
-          <span className={styles.coinSmall}>+50</span>
-          <img className={styles.heroMark} src="/pokt-mark.svg" alt="" width={56} height={56} />
-          <Sparkles className={styles.spark1} size={22} />
-          <Sparkles className={styles.spark2} size={18} />
-        </div>
+        <HeroArt />
       </section>
 
       <div className={styles.toolbar}>
