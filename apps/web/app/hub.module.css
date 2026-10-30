@@ -269,7 +269,11 @@
 
 [data-theme='light'] .goldText {
   background: none;
-  color: var(--text-gold);
+  color: var(--brand-blue);
+}
+
+[data-theme='light'] .eyebrow {
+  background: color-mix(in srgb, var(--brand-blue) 10%, transparent);
 }
 
 .heroLede {
