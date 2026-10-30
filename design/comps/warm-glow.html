@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Comp A: Warm glow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <style>
+      /* Brand tokens: as apps/web/app/globals.css (the brandboard). */
+      :root {
+        --brand-blue: #025af2;
+        --brand-blue-hover: #0247c2;
+        --brand-gold: #ffc547;
+        --brand-gold-hover: #e6b03f;
+        --brand-mint: #48e5c2;
+        --brand-coral: #ff5a5f;
+        --brand-lavender: #b8b8ff;
+        --brand-dark: #171c1f;
+        --font-primary: 'Rubik', system-ui, sans-serif;
+        --font-numeric: 'JetBrains Mono', monospace;
+        --radius-lg: 8px;
+        --radius-xl: 12px;
+        --radius-full: 9999px;
+        --bg-primary: #171c1f;
+        --bg-secondary: #1e2428;
+        --bg-tertiary: #262c31;
+        --text-primary: #e8eaed;
+        --text-secondary: #a4aab0;
+        --text-tertiary: #7d858c;
+        --border-primary: #333a40;
+        --border-secondary: #262c31;
+      }
+      [data-theme='light'] {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f6f6f6;
+        --bg-tertiary: #ecedef;
+        --text-primary: #171c1f;
+        --text-secondary: #4a5057;
+        --text-tertiary: #6e767d;
+        --border-primary: #dfe1e4;
+        --border-secondary: #ecedef;
+      }
+
+      /* Expressive layer: hub only, built from the brand tokens above. */
+      :root {
+        --gradient-warm: linear-gradient(
+          160deg,
+          #ffd66e 0%,
+          var(--brand-gold) 45%,
+          var(--brand-gold-hover) 100%
+        );
+        --gradient-cool: linear-gradient(135deg, var(--brand-blue) 0%, #5a9eff 100%);
+        --glow-gold: rgba(255, 197, 71, 0.09);
+        --glow-blue2: rgba(90, 158, 255, 0.14);
+        --glow-blue: rgba(2, 90, 242, 0.26);
+        --surface-card: rgba(30, 36, 40, 0.72);
+        --surface-hero: rgba(30, 36, 40, 0.6);
+        --cat-social: var(--brand-blue);
+        --cat-onboarding: var(--brand-mint);
+        --cat-community: var(--brand-lavender);
+        --cat-earn: var(--brand-gold);
+        --cat-other: var(--brand-coral);
+        --on-warm: var(--brand-dark);
+      }
+      [data-theme='light'] {
+        --glow-gold: rgba(255, 197, 71, 0.22);
+        --glow-blue2: rgba(90, 158, 255, 0.14);
+        --glow-blue: rgba(2, 90, 242, 0.12);
+        --surface-card: rgba(255, 255, 255, 0.85);
+        --surface-hero: rgba(255, 255, 255, 0.7);
+        --cat-onboarding: #1d8f76;
+        --cat-community: #6b6bd6;
+        --cat-earn: #c98a0b;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: var(--font-primary);
+        color: var(--text-primary);
+        line-height: 1.6;
+        background:
+          radial-gradient(55% 45% at 85% 0%, var(--glow-blue), transparent 70%),
+          radial-gradient(40% 35% at 0% 30%, var(--glow-blue2), transparent 70%),
+          radial-gradient(35% 30% at 15% 0%, var(--glow-gold), transparent 70%),
+          radial-gradient(50% 45% at 60% 100%, var(--glow-blue), transparent 70%), var(--bg-primary);
+        background-attachment: fixed;
+        min-height: 100vh;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wrap {
+        width: min(100% - 32px, 72rem);
+        margin: 0 auto;
+      }
+
+      /* Header: inside the content width, pill nav in the middle. */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        padding: 16px 0;
+        backdrop-filter: blur(10px);
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+      }
+      .brand svg {
+        width: 30px;
+        height: 30px;
+      }
+      .pills {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-full);
+        background: var(--surface-card);
+      }
+      .pills a {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: var(--radius-full);
+        color: var(--text-secondary);
+        font-size: 15px;
+        font-weight: 500;
+        transition:
+          color 0.15s,
+          background 0.15s;
+      }
+      .pills a:hover {
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
+      }
+      .pills a[aria-current] {
+        background: var(--gradient-cool);
+        color: #fff;
+        box-shadow: 0 4px 18px rgba(2, 90, 242, 0.35);
+      }
+      .pills svg {
+        width: 16px;
+        height: 16px;
+      }
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .icon-btn {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-full);
+        background: var(--surface-card);
+        color: var(--text-primary);
+        cursor: pointer;
+      }
+      .icon-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+      .btn-warm {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border: 0;
+        border-radius: var(--radius-full);
+        background: var(--gradient-warm);
+        background-size: 150% 150%;
+        color: var(--on-warm);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 6px 22px rgba(255, 197, 71, 0.35);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s,
+          background-position 0.4s;
+      }
+      .btn-warm:hover {
+        transform: translateY(-2px);
+        background-position: 100% 0;
+        box-shadow: 0 10px 28px rgba(255, 197, 71, 0.45);
+      }
+      .btn-warm svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* Hero */
+      .hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 32px;
+        align-items: center;
+        margin-top: 24px;
+        padding: 48px;
+        border: 1px solid var(--border-primary);
+        border-radius: 24px;
+        background: var(--surface-hero);
+        overflow: hidden;
+      }
+      .hero::before {
+        content: '';
+        position: absolute;
+        inset: -40% -10% auto auto;
+        width: 60%;
+        aspect-ratio: 1;
+        background: radial-gradient(closest-side, var(--glow-blue), transparent);
+        pointer-events: none;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 12px;
+        border-radius: var(--radius-full);
+        background: rgba(255, 197, 71, 0.14);
+        color: var(--cat-earn);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .eyebrow svg {
+        width: 14px;
+        height: 14px;
+      }
+      h1 {
+        margin: 16px 0 12px;
+        font-size: clamp(2.4rem, 5vw, 3.75rem);
+        line-height: 1.05;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .warm-text {
+        background: var(--gradient-warm);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .lede {
+        max-width: 32rem;
+        color: var(--text-secondary);
+        font-size: 18px;
+      }
+      .hero-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+        margin-top: 24px;
+      }
+      .count {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-size: 15px;
+      }
+      .count b {
+        font-family: var(--font-numeric);
+        color: var(--text-primary);
+      }
+      .art {
+        position: relative;
+        height: 240px;
+      }
+      .art .coin {
+        position: absolute;
+        border-radius: 50%;
+        background: var(--gradient-warm);
+        box-shadow:
+          inset 0 -6px 0 rgba(0, 0, 0, 0.15),
+          0 12px 30px rgba(255, 197, 71, 0.4);
+        display: grid;
+        place-items: center;
+        color: var(--on-warm);
+        font-family: var(--font-numeric);
+        font-weight: 700;
+      }
+      .art .c1 {
+        width: 132px;
+        height: 132px;
+        left: 34%;
+        top: 18%;
+        font-size: 30px;
+        animation: bob 5s ease-in-out infinite;
+      }
+      .art .c2 {
+        width: 64px;
+        height: 64px;
+        left: 12%;
+        top: 58%;
+        font-size: 15px;
+        animation: bob 6s ease-in-out -2s infinite;
+      }
+      .art .c3 {
+        width: 48px;
+        height: 48px;
+        right: 8%;
+        top: 8%;
+        font-size: 12px;
+        animation: bob 4.5s ease-in-out -1s infinite;
+        background: var(--gradient-cool);
+        color: #fff;
+      }
+      .art .spark {
+        position: absolute;
+        color: var(--brand-gold);
+        animation: twinkle 2.8s ease-in-out infinite;
+      }
+      .art .spark svg {
+        width: 22px;
+        height: 22px;
+      }
+      .art .badge-card {
+        position: absolute;
+        right: 2%;
+        bottom: 6%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border: 1px solid var(--border-primary);
+        border-radius: 14px;
+        background: var(--bg-secondary);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        font-size: 14px;
+        animation: bob 7s ease-in-out -3s infinite;
+      }
+      .badge-card .dot {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: rgba(72, 229, 194, 0.16);
+        color: var(--cat-onboarding);
+      }
+      .badge-card .dot svg {
+        width: 18px;
+        height: 18px;
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0);
+        }
+        50% {
+          transform: translateY(-12px) rotate(3deg);
+        }
+      }
+      @keyframes twinkle {
+        0%,
+        100% {
+          opacity: 0.25;
+          transform: scale(0.8);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.15);
+        }
+      }
+
+      /* Filters */
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 40px 0 20px;
+      }
+      .cats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .cat {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-full);
+        background: var(--surface-card);
+        color: var(--text-secondary);
+        font: inherit;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          color 0.15s,
+          transform 0.15s;
+      }
+      .cat i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--c);
+      }
+      .cat:hover {
+        border-color: var(--c);
+        color: var(--text-primary);
+        transform: translateY(-1px);
+      }
+      .cat[aria-pressed='true'] {
+        background: color-mix(in srgb, var(--c) 18%, transparent);
+        border-color: var(--c);
+        color: var(--text-primary);
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-full);
+        background: var(--surface-card);
+        color: var(--text-tertiary);
+        min-width: 16rem;
+      }
+      .search svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* Quest cards */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+        gap: 16px;
+        list-style: none;
+      }
+      .card {
+        position: relative;
+        display: grid;
+        gap: 14px;
+        padding: 20px;
+        border: 1px solid var(--border-primary);
+        border-radius: 18px;
+        background: var(--surface-card);
+        overflow: hidden;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s,
+          border-color 0.2s;
+        animation: rise 0.5s ease-out both;
+      }
+      .card::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--c), transparent 85%);
+      }
+      .card:hover {
+        transform: translateY(-4px);
+        border-color: color-mix(in srgb, var(--c) 60%, transparent);
+        box-shadow: 0 16px 40px color-mix(in srgb, var(--c) 22%, transparent);
+      }
+      .card-top {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .tile {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--c) 16%, transparent);
+        color: var(--c);
+        transition: transform 0.2s;
+      }
+      .card:hover .tile {
+        transform: rotate(-6deg) scale(1.06);
+      }
+      .tile svg {
+        width: 24px;
+        height: 24px;
+      }
+      .kicker {
+        color: var(--c);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .card h3 {
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+      .card p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .xp {
+        flex: none;
+        margin-left: auto;
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: var(--gradient-warm);
+        color: var(--on-warm);
+        box-shadow:
+          inset 0 -4px 0 rgba(0, 0, 0, 0.14),
+          0 6px 16px rgba(255, 197, 71, 0.3);
+        font-family: var(--font-numeric);
+        line-height: 1;
+        text-align: center;
+        overflow: hidden;
+      }
+      .xp b {
+        display: block;
+        font-size: 17px;
+      }
+      .xp small {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+      .xp::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          115deg,
+          transparent 35%,
+          rgba(255, 255, 255, 0.55) 50%,
+          transparent 65%
+        );
+        transform: translateX(-120%);
+        animation: shimmer 4s ease-in-out infinite;
+      }
+      .card:nth-child(2n) .xp::after {
+        animation-delay: 1.3s;
+      }
+      .card:nth-child(3n) .xp::after {
+        animation-delay: 2.6s;
+      }
+      @keyframes shimmer {
+        0%,
+        60% {
+          transform: translateX(-120%);
+        }
+        85%,
+        100% {
+          transform: translateX(120%);
+        }
+      }
+      .foot {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .meter {
+        flex: 1;
+        height: 8px;
+        border-radius: var(--radius-full);
+        background: var(--bg-tertiary);
+        overflow: hidden;
+      }
+      .meter span {
+        display: block;
+        height: 100%;
+        width: var(--p);
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 60%, #fff));
+        animation: fill 1.2s ease-out both 0.3s;
+      }
+      @keyframes fill {
+        from {
+          width: 0;
+        }
+      }
+      .frac {
+        font-family: var(--font-numeric);
+        font-size: 13px;
+        color: var(--text-tertiary);
+      }
+      .start {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: var(--radius-full);
+        background: color-mix(in srgb, var(--c) 18%, transparent);
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 600;
+        transition:
+          background 0.15s,
+          gap 0.15s;
+      }
+      .card:hover .start {
+        background: var(--c);
+        color: #fff;
+        gap: 10px;
+      }
+      .card[data-cat='earn']:hover .start,
+      .card[data-cat='onboarding']:hover .start,
+      .card[data-cat='community']:hover .start {
+        color: #171c1f;
+      }
+      .start svg {
+        width: 16px;
+        height: 16px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 10px;
+        border-radius: var(--radius-full);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .chip.ok {
+        background: rgba(72, 229, 194, 0.16);
+        color: var(--cat-onboarding);
+      }
+      .chip.wait {
+        background: rgba(255, 197, 71, 0.16);
+        color: var(--cat-earn);
+      }
+      .chip svg {
+        width: 13px;
+        height: 13px;
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+      }
+      .grid li:nth-child(1) .card {
+        animation-delay: 0.05s;
+      }
+      .grid li:nth-child(2) .card {
+        animation-delay: 0.1s;
+      }
+      .grid li:nth-child(3) .card {
+        animation-delay: 0.15s;
+      }
+      .grid li:nth-child(4) .card {
+        animation-delay: 0.2s;
+      }
+      .grid li:nth-child(5) .card {
+        animation-delay: 0.25s;
+      }
+      .grid li:nth-child(6) .card {
+        animation-delay: 0.3s;
+      }
+
+      /* Leaderboard teaser */
+      .split {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 16px;
+        margin: 40px 0 64px;
+      }
+      .panel {
+        padding: 24px;
+        border: 1px solid var(--border-primary);
+        border-radius: 18px;
+        background: var(--surface-card);
+      }
+      .panel h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 20px;
+        margin-bottom: 16px;
+      }
+      .panel h2 svg {
+        color: var(--brand-gold);
+      }
+      .lb {
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+      .lb li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: var(--bg-tertiary);
+      }
+      .lb li.me {
+        outline: 2px solid var(--brand-blue);
+      }
+      .medal {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-family: var(--font-numeric);
+        font-weight: 700;
+        font-size: 13px;
+        background: var(--border-primary);
+        color: var(--text-primary);
+      }
+      .m1 {
+        background: var(--gradient-warm);
+        color: var(--on-warm);
+      }
+      .m2 {
+        background: #c9ced6;
+        color: #171c1f;
+      }
+      .m3 {
+        background: #b9805a;
+        color: var(--brand-dark);
+      }
+      .av {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-weight: 600;
+        color: #fff;
+      }
+      .lb .pts {
+        margin-left: auto;
+        font-family: var(--font-numeric);
+        color: var(--cat-earn);
+        font-weight: 700;
+      }
+      .rank {
+        display: grid;
+        gap: 14px;
+      }
+      .rank .big {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .shield {
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--brand-lavender), var(--brand-blue));
+        color: #fff;
+        animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both 0.4s;
+      }
+      .shield svg {
+        width: 32px;
+        height: 32px;
+      }
+      @keyframes pop {
+        from {
+          transform: scale(0.4) rotate(-12deg);
+          opacity: 0;
+        }
+      }
+      .rank .meter {
+        height: 10px;
+      }
+      .rank .meter span {
+        --c: var(--brand-gold);
+        background: var(--gradient-warm);
+      }
+
+      @media (max-width: 860px) {
+        .hero {
+          grid-template-columns: 1fr;
+          padding: 28px;
+        }
+        .art {
+          height: 180px;
+        }
+        .split {
+          grid-template-columns: 1fr;
+        }
+        .pills a span {
+          display: none;
+        }
+        .brand span {
+          display: none;
+        }
+      }
+      @media (max-width: 520px) {
+        .btn-warm.hide-sm {
+          display: none;
+        }
+        .search {
+          min-width: 0;
+          flex: 1;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+      .comp-tag {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        z-index: 20;
+        padding: 6px 12px;
+        border-radius: var(--radius-full);
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        font-size: 12px;
+        border: 1px solid var(--border-primary);
+      }
+      .comp-tag a {
+        color: var(--brand-blue);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap bar">
+        <a class="brand" href="#"
+          ><svg viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="16" r="15" fill="#025af2" />
+            <path
+              d="M11 23V9h6.2a4.6 4.6 0 0 1 0 9.2H14"
+              fill="none"
+              stroke="#fff"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            /></svg
+          ><span>Community Hub</span></a
+        >
+        <nav class="pills" aria-label="Main">
+          <a href="#" aria-current="page"><i data-lucide="swords"></i><span>Quests</span></a>
+          <a href="#"><i data-lucide="trophy"></i><span>Leaderboard</span></a>
+          <a href="#"><i data-lucide="gift"></i><span>Rewards</span></a>
+        </nav>
+        <div class="actions">
+          <button class="icon-btn" id="theme" aria-label="Switch to light mode">
+            <i data-lucide="sun"></i>
+          </button>
+          <a class="btn-warm hide-sm" href="#"><i data-lucide="log-in"></i>Connect Discord</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="hero">
+        <div>
+          <span class="eyebrow"><i data-lucide="sparkles"></i>Season 1 is live</span>
+          <h1>Complete quests, <span class="warm-text">earn XP</span>, rise through the ranks</h1>
+          <p class="lede">
+            Share Pocket with the world, help new builders, and get recognised in the community for
+            it.
+          </p>
+          <div class="hero-row">
+            <a class="btn-warm" href="#"><i data-lucide="rocket"></i>Start a quest</a>
+            <span class="count"><i data-lucide="target"></i><b>13</b> quests available</span>
+          </div>
+        </div>
+        <div class="art" aria-hidden="true">
+          <div class="coin c1">XP</div>
+          <div class="coin c2">+50</div>
+          <div class="coin c3">P</div>
+          <span class="spark" style="left: 8%; top: 10%"><i data-lucide="sparkle"></i></span>
+          <span class="spark" style="left: 70%; top: 62%; animation-delay: 1s"
+            ><i data-lucide="star"></i
+          ></span>
+          <span class="spark" style="left: 28%; top: 82%; animation-delay: 1.8s"
+            ><i data-lucide="sparkle"></i
+          ></span>
+          <div class="badge-card">
+            <span class="dot"><i data-lucide="badge-check"></i></span
+            ><span
+              ><b>Quest approved</b><br /><small style="color: var(--text-secondary)"
+                >+150 XP</small
+              ></span
+            >
+          </div>
+        </div>
+      </section>
+
+      <div class="toolbar">
+        <div class="cats" role="group" aria-label="Category">
+          <button class="cat" aria-pressed="true" style="--c: var(--brand-gold)">
+            <i></i>All quests
+          </button>
+          <button class="cat" aria-pressed="false" style="--c: var(--cat-social)">
+            <i></i>Social
+          </button>
+          <button class="cat" aria-pressed="false" style="--c: var(--cat-onboarding)">
+            <i></i>Onboarding
+          </button>
+          <button class="cat" aria-pressed="false" style="--c: var(--cat-community)">
+            <i></i>Community
+          </button>
+          <button class="cat" aria-pressed="false" style="--c: var(--cat-earn)"><i></i>Earn</button>
+          <button class="cat" aria-pressed="false" style="--c: var(--cat-other)">
+            <i></i>Other
+          </button>
+        </div>
+        <label class="search"><i data-lucide="search"></i>Search quests…</label>
+      </div>
+
+      <ul class="grid">
+        <li>
+          <a class="card" href="#" data-cat="earn" style="--c: var(--cat-earn)"
+            ><div class="card-top">
+              <span class="tile"><i data-lucide="video"></i></span>
+              <div>
+                <div class="kicker">Earn</div>
+                <h3>Record an explainer clip</h3>
+              </div>
+              <span class="xp"
+                ><span><b>200</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Record a 60–90 second video explaining how Pocket serves data to AI agents.</p>
+            <div class="foot">
+              <span class="frac">0/1</span><span class="meter"><span style="--p: 0%"></span></span
+              ><span class="start">Start<i data-lucide="arrow-right"></i></span></div
+          ></a>
+        </li>
+        <li>
+          <a class="card" href="#" data-cat="other" style="--c: var(--cat-other)"
+            ><div class="card-top">
+              <span class="tile"><i data-lucide="bug"></i></span>
+              <div>
+                <div class="kicker">Other</div>
+                <h3>Report a docs bug</h3>
+              </div>
+              <span class="xp"
+                ><span><b>80</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Explore the developer docs and report anything broken, unclear or out of date.</p>
+            <div class="foot">
+              <span class="chip wait"><i data-lucide="hourglass"></i>In review</span
+              ><span class="meter"><span style="--p: 60%"></span></span
+              ><span class="start">View<i data-lucide="arrow-right"></i></span></div
+          ></a>
+        </li>
+        <li>
+          <a class="card" href="#" data-cat="community" style="--c: var(--cat-community)"
+            ><div class="card-top">
+              <span class="tile"><i data-lucide="users"></i></span>
+              <div>
+                <div class="kicker">Community</div>
+                <h3>Local meetup recap</h3>
+              </div>
+              <span class="xp"
+                ><span><b>300</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Host or attend a meetup and share a short recap with photos.</p>
+            <div class="foot">
+              <span class="frac">0/1</span><span class="meter"><span style="--p: 0%"></span></span
+              ><span class="start">Start<i data-lucide="arrow-right"></i></span></div
+          ></a>
+        </li>
+        <li>
+          <a class="card" href="#" data-cat="onboarding" style="--c: var(--cat-onboarding)"
+            ><div class="card-top">
+              <span class="tile"><i data-lucide="languages"></i></span>
+              <div>
+                <div class="kicker">Onboarding</div>
+                <h3>Translate a docs snippet</h3>
+              </div>
+              <span class="xp"
+                ><span><b>120</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Translate a short section of the Pocket docs into your language.</p>
+            <div class="foot">
+              <span class="chip ok"><i data-lucide="check"></i>Approved</span
+              ><span class="meter"><span style="--p: 100%"></span></span
+              ><span class="start">Done<i data-lucide="party-popper"></i></span></div
+          ></a>
+        </li>
+        <li>
+          <a class="card" href="#" data-cat="social" style="--c: var(--cat-social)"
+            ><div class="card-top">
+              <span class="tile"><i data-lucide="at-sign"></i></span>
+              <div>
+                <div class="kicker">Social</div>
+                <h3>Post a social thread</h3>
+              </div>
+              <span class="xp"
+                ><span><b>75</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Post a thread on X explaining what Pocket does for service developers.</p>
+            <div class="foot">
+              <span class="frac">0/1</span><span class="meter"><span style="--p: 0%"></span></span
+              ><span class="start">Start<i data-lucide="arrow-right"></i></span></div
+          ></a>
+        </li>
+        <li>
+          <a class="card" href="#" data-cat="earn" style="--c: var(--cat-earn)"
+            ><div class="card-top">
+              <span class="tile"><i data-lucide="graduation-cap"></i></span>
+              <div>
+                <div class="kicker">Earn</div>
+                <h3>Create a tutorial</h3>
+              </div>
+              <span class="xp"
+                ><span><b>150</b><small>XP</small></span></span
+              >
+            </div>
+            <p>Write a short tutorial that helps a new builder ship their first service.</p>
+            <div class="foot">
+              <span class="frac">0/1</span><span class="meter"><span style="--p: 0%"></span></span
+              ><span class="start">Start<i data-lucide="arrow-right"></i></span></div
+          ></a>
+        </li>
+      </ul>
+
+      <div class="split">
+        <section class="panel">
+          <h2><i data-lucide="trophy"></i>Top ambassadors this month</h2>
+          <ol class="lb">
+            <li>
+              <span class="medal m1">1</span
+              ><span class="av" style="background: #025af2">A</span>Ana
+              <span class="pts">12,450 XP</span>
+            </li>
+            <li>
+              <span class="medal m2">2</span
+              ><span class="av" style="background: #2bb89a">K</span>Kwame
+              <span class="pts">9,320 XP</span>
+            </li>
+            <li>
+              <span class="medal m3">3</span
+              ><span class="av" style="background: #b8b8ff; color: #171c1f">M</span>Mei
+              <span class="pts">7,650 XP</span>
+            </li>
+            <li class="me">
+              <span class="medal">14</span><span class="av" style="background: #ff5a5f">J</span>You
+              <span class="pts">1,980 XP</span>
+            </li>
+          </ol>
+        </section>
+        <section class="panel rank">
+          <h2><i data-lucide="shield"></i>Your rank</h2>
+          <div class="big">
+            <span class="shield"><i data-lucide="shield-check"></i></span>
+            <div>
+              <b style="font-size: 20px">Navigator</b><br /><span
+                style="color: var(--text-secondary); font-size: 14px"
+                >520 XP to Trailblazer</span
+              >
+            </div>
+          </div>
+          <span class="meter"><span style="--p: 74%"></span></span>
+        </section>
+      </div>
+    </main>
+
+    <p class="comp-tag">Comp A: Warm glow · <a href="arcade.html">see Arcade</a></p>
+
+    <script>
+      lucide.createIcons();
+      const btn = document.getElementById('theme');
+      const apply = (t) => {
+        document.documentElement.dataset.theme = t;
+        btn.setAttribute(
+          'aria-label',
+          t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+        );
+        btn.innerHTML = '<i data-lucide="' + (t === 'dark' ? 'sun' : 'moon') + '"></i>';
+        lucide.createIcons();
+      };
+      try {
+        const saved = localStorage.getItem('comp-theme');
+        if (saved) apply(saved);
+      } catch {}
+      btn.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        apply(next);
+        try {
+          localStorage.setItem('comp-theme', next);
+        } catch {}
+      });
+    </script>
+  </body>
+</html>
