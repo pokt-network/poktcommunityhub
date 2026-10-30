@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono, Rubik } from 'next/font/google';
+import { cookies } from 'next/headers';
+
+import { parseTheme, THEME_COOKIE } from '@/lib/theme';
 
 import './globals.css';
 import { SiteHeader } from './site-header';
@@ -32,14 +35,16 @@ export const viewport: Viewport = {
   themeColor: '#171c1f',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+
   return (
-    <html lang="en" data-theme="dark" className={`${rubik.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" data-theme={theme} className={`${rubik.variable} ${jetbrainsMono.variable}`}>
       <body>
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <SiteHeader />
+        <SiteHeader theme={theme} />
         <div id="main">{children}</div>
       </body>
     </html>

@@ -2,12 +2,14 @@ import { LogIn } from 'lucide-react';
 import Link from 'next/link';
 
 import { currentViewer } from '@/lib/authz';
+import type { Theme } from '@/lib/theme';
 
 import styles from './hub.module.css';
 import { NavPills } from './nav-pills';
+import { ThemeToggle } from './theme-toggle';
 
-/** The bar on every page: the way round, and who you are signed in as. */
-export async function SiteHeader() {
+/** The bar on every page: the way round, the theme, and who you are signed in as. */
+export async function SiteHeader({ theme }: { theme: Theme }) {
   const viewer = await currentViewer();
 
   return (
@@ -19,6 +21,7 @@ export async function SiteHeader() {
         </Link>
         <NavPills />
         <div className={styles.headerActions}>
+          <ThemeToggle initial={theme} />
           {viewer === null ? (
             <Link className={styles.gold} href="/signin">
               <LogIn size={18} aria-hidden />
