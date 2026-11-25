@@ -43,6 +43,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // /_next/image is off: the app has no images that need resizing, and with no
+  // `images` config the optimizer fetches any of the app's own routes by URL.
+  images: { unoptimized: true },
   // The deployed artifact: only the files the server reaches, under .next/standalone.
   output: 'standalone',
   outputFileTracingRoot: workspaceRoot,
